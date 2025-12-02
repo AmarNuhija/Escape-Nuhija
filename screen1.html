@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <title>Ladebildschirm</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background: #050505;
+      color: #f5f5f5;
+      font-family: Copperplate, Papyrus, fantasy;
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .text {
+      font-size: 2rem;
+      white-space: nowrap;
+      z-index: 1;
+    }
+
+    .cursor {
+      display: inline-block;
+      width: 10px;
+      background: #f5f5f5;
+      margin-left: 4px;
+      animation: blink 0.8s steps(1) infinite;
+    }
+
+    @keyframes blink {
+      0%, 50% { opacity: 1; }
+      51%, 100% { opacity: 0; }
+    }
+
+    .logo {
+      position: absolute;
+      right: 40px;
+      bottom: 40px;
+      width: 130px;
+      height: 130px;
+      border-radius: 50%;
+      border: 2px solid #f5f5f5;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      overflow: hidden;
+      background: #050505;
+      z-index: 1;
+    }
+
+    .logo img {
+      max-width: 90%;
+      max-height: 90%;
+      object-fit: contain;
+      filter: drop-shadow(0 0 6px rgba(0,0,0,0.7));
+    }
+
+    /* Glitch-Effekt auf dem ganzen Screen */
+    .glitch-overlay {
+      position: absolute;
+      inset: 0;
+      background: repeating-linear-gradient(
+        to bottom,
+        rgba(255, 255, 255, 0.05),
+        rgba(255, 255, 255, 0.05) 2px,
+        transparent 2px,
+        transparent 4px
+      );
+      mix-blend-mode: screen;
+      opacity: 0;
+      pointer-events: none;
+      z-index: 2;
+    }
+
+    /* längerer Glitch: 1.6s */
+    .glitch-active .glitch-overlay {
+      animation: glitch-flicker 1.6s linear forwards;
+    }
+
+    .glitch-active .logo,
+    .glitch-active .text {
+      animation: glitch-move 1.6s linear forwards;
+    }
+
+    .glitch-active .cursor {
+      animation: none;
+      opacity: 0;
+    }
+
+    @keyframes glitch-flicker {
+      0%   { opacity: 0; }
+      20%  { opacity: 0.7; }
+      40%  { opacity: 0.2; }
+      60%  { opacity: 0.9; }
+      100% { opacity: 0; }
+    }
+
+    /* stärkeres Rütteln */
+    @keyframes glitch-move {
+      0%   { transform: translate(0,0); opacity: 1; }
+      10%  { transform: translate(-8px, 5px) skew(-3deg); }
+      20%  { transform: translate(6px, -4px) skew(2deg); }
+      30%  { transform: translate(-10px, -2px) skew(-4deg); opacity: 0.9; }
+      40%  { transform: translate(4px, 6px) skew(3deg); opacity: 0.7; }
+      50%  { transform: translate(-6px, 3px) skew(-2deg); opacity: 0.5; }
+      60%  { transform: translate(10px, -5px) skew(4deg); opacity: 0.3; }
+      75%  { transform: translate(-4px, -7px) skew(-3deg); opacity: 0.2; }
+      100% { transform: translate(0,0); opacity: 0; }
+    }
+
+    /* Start-Button, damit der Browser Audio abspielen darf */
+    #startBtn {
+      position: absolute;
+      inset: 0;
+      margin: auto;
+      width: 260px;
+      height: 60px;
+      border-radius: 999px;
+      border: 1px solid #f5f5f5;
+      background: #111;
+      color: #f5f5f5;
+      font-family: Copperplate, Papyrus, fantasy;
+      font-size: 1rem;
+      cursor: pointer;
+      z-index: 3;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    #startBtn:hover {
+      background: #181818;
+      box-shadow: 0 0 14px rgba(255,255,255,0.2);
+    }
+
+    /* Audio-Element unsichtbar */
+    #whooshSound {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <!-- Start-Button für User-Interaktion -->
+  <button id="startBtn">Klicken, um zu starten</button>
+
+  <div class="text" id="typewriter"></div><span class="cursor"></span>
+
+  <!-- Logo-Bild -->
+  <div class="logo" id="logo">
+    <img src="logo.png" alt="Escape Nuhija Logo">
+  </div>
+
+  <div class="glitch-overlay"></div>
+
+  <!-- Whoosh-/Wind-Sound – deine Datei WooshSound.mp4 -->
+  <audio id="whooshSound" src="WooshSound.mp4"></audio>
+
+  <script>
+    const text = "Amar Nuhija präsentiert, Escape Nuhija...";
+    const speedType = 150;   // Geschwindigkeit beim Tippen
+    const speedDelete = 50;  // Geschwindigkeit beim Löschen
+
+    const element = document.getElementById("typewriter");
+    const body = document.body;
+    const whoosh = document.getElementById("whooshSound");
+    const startBtn = document.getElementById("startBtn");
+
+    let index = 0;
+    let typingStarted = false;
+
+    function typeText() {
+      if (index < text.length) {
+        element.textContent += text.charAt(index);
+        index++;
+        setTimeout(typeText, speedType);
+      } else {
+        // kurze Pause, dann löschen
+        setTimeout(deleteText, 1000);
+      }
+    }
+
+    function deleteText() {
+      if (index > 0) {
+        element.textContent = text.substring(0, index - 1);
+        index--;
+        setTimeout(deleteText, speedDelete);
+      } else {
+        startGlitch();
+      }
+    }
+
+    function startGlitch() {
+      if (whoosh && whoosh.play) {
+        whoosh.currentTime = 0;
+        whoosh.play().catch(() => {});
+      }
+
+      body.classList.add("glitch-active");
+
+      // Nach Glitch-Effekt zu Screen 2 weiterleiten
+      setTimeout(() => {
+        window.location.href = "screen2.html";
+      }, 1700); 
+    }
+
+    startBtn.addEventListener("click", () => {
+      startBtn.style.display = "none";
+
+      if (whoosh && whoosh.play) {
+        whoosh.play().then(() => {
+          whoosh.pause();
+          whoosh.currentTime = 0;
+        }).catch(() => {});
+      }
+
+      if (!typingStarted) {
+        typingStarted = true;
+        typeText();
+      }
+    });
+  </script>
+</body>
+</html>
