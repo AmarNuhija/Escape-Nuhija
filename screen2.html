@@ -109,8 +109,6 @@
       text-decoration: none;
     }
 
-    /* =============== SCHLICHTE SLIDER =============== */
-
     input[type="range"] {
       -webkit-appearance: none;
       appearance: none;
@@ -127,7 +125,6 @@
       box-shadow: 0 0 6px rgba(255,255,255,0.18);
     }
 
-    /* WebKit (Chrome, Edge, Safari) */
     input[type="range"]::-webkit-slider-thumb {
       -webkit-appearance: none;
       appearance: none;
@@ -146,7 +143,6 @@
       background: #ffffff;
     }
 
-    /* Firefox */
     input[type="range"]::-moz-range-track {
       height: 4px;
       border-radius: 999px;
@@ -176,7 +172,7 @@
 
     <div class="group-title">Spieler</div>
     <label for="username">Spielername</label>
-    <input type="text" id="username" placeholder="z.B. Escaper007edg" />
+    <input type="text" id="username" placeholder="z.B. Escaper007..." />
 
     <label for="email">E-Mail (optional)</label>
     <input type="email" id="email" placeholder="name@example.com" />
@@ -206,38 +202,82 @@
   </div>
 
   <script>
-     const volume = document.getElementById("volume");
-  const brightness = document.getElementById("brightness");
-  const contrast = document.getElementById("contrast");
+    const SETTINGS_KEY = "escape_settings";
 
-  const volLabel = document.getElementById("volume-value");
-  const briLabel = document.getElementById("brightness-value");
-  const conLabel = document.getElementById("contrast-value");
+    const volume      = document.getElementById("volume");
+    const brightness  = document.getElementById("brightness");
+    const contrast    = document.getElementById("contrast");
 
-  function updateLabel(input, label, suffix = "%") {
-    label.textContent = input.value + suffix;
-  }
+    const volLabel = document.getElementById("volume-value");
+    const briLabel = document.getElementById("brightness-value");
+    const conLabel = document.getElementById("contrast-value");
 
-  volume.addEventListener("input", () => updateLabel(volume, volLabel));
-  brightness.addEventListener("input", () => updateLabel(brightness, briLabel));
-  contrast.addEventListener("input", () => updateLabel(contrast, conLabel));
-
-  function goToLobby() {
-    const usernameInput = document.getElementById("username");
-    let username = usernameInput.value.trim();
-
-    if (!username) {
-      username = "Player";
+    function updateLabel(input, label, suffix = "%") {
+      label.textContent = input.value + suffix;
     }
 
-    // Username + Start-Leben speichern
-    localStorage.setItem("escape_username", username);
-    localStorage.setItem("escape_lives", "5");
+    volume.addEventListener("input", () => updateLabel(volume, volLabel));
+    brightness.addEventListener("input", () => updateLabel(brightness, briLabel));
+    contrast.addEventListener("input", () => updateLabel(contrast, conLabel));
 
-    window.location.href = "screen3.html";
-  }
+    window.addEventListener("load", () => {
+      const raw = localStorage.getItem(SETTINGS_KEY);
+      if (raw) {
+        try {
+          const data = JSON.parse(raw);
+          if (typeof data.master === "number") {
+            volume.value = data.master;
+          }
+          if (typeof data.brightness === "number") {
+            brightness.value = data.brightness;
+          }
+          if (typeof data.contrast === "number") {
+            contrast.value = data.contrast;
+          }
+        } catch (e) {
+          console.warn("Konnte Einstellungen von Screen3 nicht lesen:", e);
+        }
+      }
 
-    
+      updateLabel(volume, volLabel);
+      updateLabel(brightness, briLabel);
+      updateLabel(contrast, conLabel);
+
+      const storedName = localStorage.getItem("escape_username");
+      if (storedName) {
+        const usernameInput = document.getElementById("username");
+        usernameInput.value = storedName;
+      }
+    });
+
+    function goToLobby() {
+      const usernameInput = document.getElementById("username");
+      let username = usernameInput.value.trim();
+
+      if (!username) {
+        username = "Player";
+      }
+
+      localStorage.setItem("escape_username", username);
+      localStorage.setItem("escape_lives", "5");
+
+      const settings = {
+        master:     100,                      // Master = UI-Effekte
+        music:      70,                       // Hintergrundmusik
+        effects:    Number(volume.value),     // nur Klick/Hover
+        brightness: Number(brightness.value),
+        contrast:   Number(contrast.value),
+        sharpness:  50,
+        mouse:      10,
+        fps:        "60"
+      };
+      localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+
+      // ⬇️ HIER: globalen Startzeitpunkt setzen (Start des Spiels)
+      localStorage.setItem("escape_global_start_time", String(Date.now()));
+
+      window.location.href = "screen3.html";
+    }
   </script>
 </body>
 </html>

@@ -312,11 +312,10 @@
     }
 
     .panel-b .answer-btn.highlight {
-  background: #00ff99;
-  color: #000;
-  box-shadow: 0 0 18px rgba(0, 255, 153, 0.7);
-}
-
+      background: #00ff99;
+      color: #000;
+      box-shadow: 0 0 18px rgba(0, 255, 153, 0.7);
+    }
 
     .answer-number {
       font-size: 2.2rem;
@@ -377,26 +376,28 @@
         <button class="door-b-btn" id="doorBButton">Raum B betreten</button>
       </div>
 
-   <div class="panel-b" id="panelB">
-  <div class="panel-b-title">Raum B – Merkspiel</div>
-  <div class="sequence-text">
-    Merke dir die blinkende Reihenfolge der Karten.<br>
-    Nachdem die Sequenz angezeigt wurde, klicke die Zahlen
-    in genau derselben Reihenfolge an.
-  </div>
+      <div class="panel-b" id="panelB">
+        <div class="panel-b-title">Raum B – Merkspiel</div>
+        <div class="sequence-text">
+          Merke dir die blinkende Reihenfolge der Karten.<br>
+          Nachdem die Sequenz angezeigt wurde, klicke die Zahlen
+          in genau derselben Reihenfolge an.
+        </div>
 
-  <div class="answers">
-    <button class="answer-btn" data-b="1">
-      <div class="answer-number">1</div>
-    </button>
-    <button class="answer-btn" data-b="2">
-      <div class="answer-number">2</div>
-    </button>
-    <button class="answer-btn" data-b="3">
-      <div class="answer-number">3</div>
-    </button>
+        <div class="answers">
+          <button class="answer-btn" data-b="1">
+            <div class="answer-number">1</div>
+          </button>
+          <button class="answer-btn" data-b="2">
+            <div class="answer-number">2</div>
+          </button>
+          <button class="answer-btn" data-b="3">
+            <div class="answer-number">3</div>
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
-</div>
 
   <script>
     // HUD
@@ -415,9 +416,23 @@
     }
     updateLivesDisplay();
 
-    const roomStartTime = Date.now();
+    // =============== GLOBALER TIMER (selbe Session wie Lobby) ===============
+    const SESSION_TIME_KEY = "escape_session_start";
+
+    function getSessionStartTime() {
+      let stored = sessionStorage.getItem(SESSION_TIME_KEY);
+      let t = stored ? parseInt(stored, 10) : NaN;
+      if (isNaN(t)) {
+        t = Date.now();
+        sessionStorage.setItem(SESSION_TIME_KEY, String(t));
+      }
+      return t;
+    }
+
+    const sessionStartTime = getSessionStartTime();
+
     function updateTimer() {
-      const diff = Date.now() - roomStartTime;
+      const diff = Date.now() - sessionStartTime;
       const totalSeconds = Math.floor(diff / 1000);
       const hours = Math.floor(totalSeconds / 3600);
       const minutes = Math.floor((totalSeconds % 3600) / 60);
@@ -427,8 +442,8 @@
         String(minutes).padStart(2, "0") + ":" +
         String(seconds).padStart(2, "0");
     }
-    setInterval(updateTimer, 1000);
     updateTimer();
+    setInterval(updateTimer, 1000);
 
     // Helper: zurück in Lobby mit Leben-Verlust
     function loseLifeAndReturn() {
@@ -565,10 +580,9 @@
 
     // Offset schon beim Betreten weiterschieben,
     // damit beim nächsten Eintritt andere Fragen kommen
-    let newOffset = (questionOffset + QUESTIONS_PER_RUN) % questionPool.length;
+    const newOffset = (questionOffset + QUESTIONS_PER_RUN) % questionPool.length;
     localStorage.setItem(QUESTION_OFFSET_KEY, String(newOffset));
 
-    // ========= Restliche Logik bleibt gleich, nutzt jetzt "questions" =========
     let currentQuestion = 0;
 
     const questionTextEl = document.getElementById("questionText");
@@ -620,94 +634,87 @@
     const answerButtonsB = Array.from(document.querySelectorAll(".panel-b .answer-btn"));
 
     function openDoorB() {
-  doorB.classList.add("open");
-  doorStatus.textContent = "offen";
-  alert("Raum A geschafft! Tür B ist jetzt geöffnet.");
+      doorB.classList.add("open");
+      doorStatus.textContent = "offen";
+      alert("Raum A geschafft! Tür B ist jetzt geöffnet.");
 
-  doorBButton.addEventListener("click", () => {
-  if (panelA) panelA.style.display = "none";  // Raum A verstecken
-  panelB.style.display = "block";             // Raum B anzeigen
-  doorB.style.display = "none";               // Tür verschwinden lassen
-  if (sectionLabel) sectionLabel.textContent = "B"; // Buchstabe oben wechseln
+      doorBButton.addEventListener("click", () => {
+        if (panelA) panelA.style.display = "none";
+        panelB.style.display = "block";
+        doorB.style.display = "none";
+        if (sectionLabel) sectionLabel.textContent = "B";
 
-  startRoomB(); // Merkspiel starten (Simon-Says)
-});
-
-}
-
+        startRoomB(); // Simon-Says-Spiel starten
+      }, { once: true });
+    }
 
     // ===== Raum B – Merkspiel (Simon-Says-Style) =====
-let sequenceB = [];
-let playerIndexB = 0;
-let acceptingInputB = false;
+    let sequenceB = [];
+    let playerIndexB = 0;
+    let acceptingInputB = false;
 
-// Zufällige Sequenz aus 1-3 erzeugen (z.B. Länge 4)
-function generateSequenceB(length = 4) {
-  sequenceB = [];
-  for (let i = 0; i < length; i++) {
-    const value = Math.floor(Math.random() * 3) + 1; // 1, 2 oder 3
-    sequenceB.push(value);
-  }
-}
-
-// Sequenz abspielen: Karten nacheinander aufleuchten lassen
-function playSequenceB() {
-  acceptingInputB = false;
-  playerIndexB = 0;
-  let i = 0;
-
-  function step() {
-    if (i >= sequenceB.length) {
-      // Spieler ist jetzt dran
-      acceptingInputB = true;
-      return;
+    function generateSequenceB(length = 4) {
+      sequenceB = [];
+      for (let i = 0; i < length; i++) {
+        const value = Math.floor(Math.random() * 3) + 1; // 1, 2 oder 3
+        sequenceB.push(value);
+      }
     }
 
-    const value = sequenceB[i];
-    const btn = document.querySelector(
-      '.panel-b .answer-btn[data-b="' + value + '"]'
-    );
+    function playSequenceB() {
+      acceptingInputB = false;
+      playerIndexB = 0;
+      let i = 0;
 
-    if (btn) {
-      btn.classList.add("highlight");
-      setTimeout(() => {
-        btn.classList.remove("highlight");
-        i++;
-        setTimeout(step, 250); // kleine Pause vor der nächsten Karte
-      }, 600); // wie lange die Karte leuchtet
-    } else {
-      // falls irgendwas schiefgeht, trotzdem nicht hängen bleiben
-      i++;
-      setTimeout(step, 250);
+      function step() {
+        if (i >= sequenceB.length) {
+          acceptingInputB = true;
+          return;
+        }
+
+        const value = sequenceB[i];
+        const btn = document.querySelector(
+          '.panel-b .answer-btn[data-b="' + value + '"]'
+        );
+
+        if (btn) {
+          btn.classList.add("highlight");
+          setTimeout(() => {
+            btn.classList.remove("highlight");
+            i++;
+            setTimeout(step, 250);
+          }, 600);
+        } else {
+          i++;
+          setTimeout(step, 250);
+        }
+      }
+
+      step();
     }
-  }
 
-  step();
-}
-
-function startRoomB() {
-  generateSequenceB(4);   // hier kannst du die Schwierigkeit ändern
-  playSequenceB();
-}
-
-function handleBClick(event) {
-  if (!acceptingInputB) return; // während die Sequenz abgespielt wird, ignorieren
-
-  const value = parseInt(event.currentTarget.getAttribute("data-b"), 10);
-  const expected = sequenceB[playerIndexB];
-
-  if (value === expected) {
-    playerIndexB++;
-    if (playerIndexB >= sequenceB.length) {
-      alert("Stark! Du hast die komplette Sequenz richtig wiederholt. Raum 1 ist geschafft.");
-      completeRoom1();
+    function startRoomB() {
+      generateSequenceB(4);   // Schwierigkeit = Länge der Sequenz
+      playSequenceB();
     }
-  } else {
-    alert("Falsche Reihenfolge in Raum B. Du kehrst in die Lobby zurück.");
-    loseLifeAndReturn();
-  }
-}
 
+    function handleBClick(event) {
+      if (!acceptingInputB) return;
+
+      const value = parseInt(event.currentTarget.getAttribute("data-b"), 10);
+      const expected = sequenceB[playerIndexB];
+
+      if (value === expected) {
+        playerIndexB++;
+        if (playerIndexB >= sequenceB.length) {
+          alert("Stark! Du hast die komplette Sequenz richtig wiederholt. Raum 1 ist geschafft.");
+          completeRoom1();
+        }
+      } else {
+        alert("Falsche Reihenfolge in Raum B. Du kehrst in die Lobby zurück.");
+        loseLifeAndReturn();
+      }
+    }
 
     answerButtonsB.forEach(btn => btn.addEventListener("click", handleBClick));
   </script>

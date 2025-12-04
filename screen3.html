@@ -608,9 +608,23 @@
       markFailed(1);
     }
 
-    const startTime = Date.now();
+    // =============== GLOBALER TIMER (Session) ===============
+    const SESSION_TIME_KEY = "escape_session_start";
+
+    function getSessionStartTime() {
+      let stored = sessionStorage.getItem(SESSION_TIME_KEY);
+      let t = stored ? parseInt(stored, 10) : NaN;
+      if (isNaN(t)) {
+        t = Date.now();
+        sessionStorage.setItem(SESSION_TIME_KEY, String(t));
+      }
+      return t;
+    }
+
+    const sessionStartTime = getSessionStartTime();
+
     function updateTimer() {
-      const diff = Date.now() - startTime;
+      const diff = Date.now() - sessionStartTime;
       const totalSeconds = Math.floor(diff / 1000);
       const hours = Math.floor(totalSeconds / 3600);
       const minutes = Math.floor((totalSeconds % 3600) / 60);
@@ -620,8 +634,8 @@
         String(minutes).padStart(2, "0") + ":" +
         String(seconds).padStart(2, "0");
     }
-    setInterval(updateTimer, 1000);
     updateTimer();
+    setInterval(updateTimer, 1000);
 
     // =============== Settings Overlay ===============
     const settingsButton   = document.getElementById("settingsButton");
@@ -701,21 +715,33 @@
       saveSettings();
     });
 
-    // =============== Musik ===============
-    const bgMusic     = document.getElementById("bgMusic");
-    const musicSlider = document.getElementById("musicVolume");
+    // =============== Musik & UI-Sounds ===============
+    const bgMusic      = document.getElementById("bgMusic");
+    const musicSlider  = document.getElementById("musicVolume");
+    const masterSlider = document.getElementById("masterVolume");
+    const effectsSlider = document.getElementById("effectsVolume");
+    const sndClick     = document.getElementById("uiClick");
+    const sndHover     = document.getElementById("uiHover");
 
     function applyMusicVolume() {
       if (!bgMusic) return;
-      bgMusic.volume = Number(musicSlider.value) / 100;
+      const volMusic = Number(musicSlider.value) / 100;
+      bgMusic.volume = volMusic;  // Master beeinflusst Musik NICHT
     }
 
-    function fadeInMusic(durationMs = 2000, targetVol) {
-      if (!bgMusic) return;
-      const volFromSlider = Number(musicSlider.value) / 100;
-      const finalTarget = typeof targetVol === "number" ? targetVol : volFromSlider;
+    function applyEffectVolumes() {
+      const master  = Number(masterSlider.value)  / 100;
+      const effects = Number(effectsSlider.value) / 100;
+      const vol = master * effects;              // UI-Lautstärke = Master * Effekte
+      if (sndClick) sndClick.volume = vol;
+      if (sndHover) sndHover.volume = vol;
+    }
 
-      if (finalTarget <= 0) {
+    function fadeInMusic(durationMs = 2000) {
+      if (!bgMusic) return;
+
+      const target = Number(musicSlider.value) / 100;
+      if (target <= 0) {
         bgMusic.volume = 0;
         return;
       }
@@ -727,9 +753,9 @@
       const stepTime = durationMs / steps;
 
       const interval = setInterval(() => {
-        current += finalTarget / steps;
-        if (current >= finalTarget) {
-          current = finalTarget;
+        current += target / steps;
+        if (current >= target) {
+          current = target;
           clearInterval(interval);
         }
         bgMusic.volume = current;
@@ -739,9 +765,8 @@
     function startBgMusic() {
       if (!bgMusic) return;
 
-      const volFromSlider = Number(musicSlider.value) / 100;
-      if (volFromSlider <= 0) {
-        // Musik ausgeschaltet -> nicht starten
+      const target = Number(musicSlider.value) / 100;
+      if (target <= 0) {
         bgMusic.pause();
         bgMusic.currentTime = 0;
         bgMusic.volume = 0;
@@ -753,7 +778,7 @@
       bgMusic.volume = 0;
 
       bgMusic.play().then(() => {
-        fadeInMusic(2500, volFromSlider);
+        fadeInMusic(2500);
       }).catch(() => {
         document.addEventListener("click", tryResumeMusic, { once: true });
       });
@@ -762,22 +787,23 @@
     function tryResumeMusic() {
       if (!bgMusic) return;
 
-      const volFromSlider = Number(musicSlider.value) / 100;
-      if (volFromSlider <= 0) {
+      const target = Number(musicSlider.value) / 100;
+      if (target <= 0) {
         bgMusic.pause();
         bgMusic.volume = 0;
         return;
       }
 
       bgMusic.currentTime = 0;
-      bgMusic.play().then(() => fadeInMusic(2500, volFromSlider)).catch(() => {});
+      bgMusic.play().then(() => fadeInMusic(2500)).catch(() => {});
     }
 
+    // Slider-Events für Audio
     musicSlider.addEventListener("input", () => {
       applyMusicVolume();
-      const vol = Number(musicSlider.value) / 100;
       if (!bgMusic) return;
 
+      const vol = Number(musicSlider.value) / 100;
       if (vol <= 0) {
         bgMusic.pause();
         bgMusic.currentTime = 0;
@@ -787,22 +813,17 @@
       saveSettings();
     });
 
-    // =============== UI-Sounds & MasterVolume ===============
-    const masterSlider = document.getElementById("masterVolume");
-    const sndClick = document.getElementById("uiClick");
-    const sndHover = document.getElementById("uiHover");
-
-    function applyMasterVolume() {
-      const master = Number(masterSlider.value) / 100;
-      if (sndClick) sndClick.volume = master;
-      if (sndHover) sndHover.volume = master;
-    }
-
     masterSlider.addEventListener("input", () => {
-      applyMasterVolume();
+      applyEffectVolumes();
       saveSettings();
     });
 
+    effectsSlider.addEventListener("input", () => {
+      applyEffectVolumes();
+      saveSettings();
+    });
+
+    // UI-Sounds
     function playClickSound() {
       if (!sndClick) return;
       sndClick.pause();
@@ -827,7 +848,6 @@
     });
 
     // =============== Settings speichern / laden ===============
-    const effectsSlider  = document.getElementById("effectsVolume");
     const sharpnessSlider = document.getElementById("sharpness");
     const fpsSelect = document.getElementById("fpsSelect");
     const SETTINGS_KEY = "escape_settings";
@@ -848,58 +868,53 @@
 
     function loadSettings() {
       const raw = localStorage.getItem(SETTINGS_KEY);
-      if (!raw) {
-        applyDisplaySettings();
-        applyMouseSensitivity();
-        applyMusicVolume();
-        applyMasterVolume();
-        return;
-      }
-      try {
-        const data = JSON.parse(raw);
-        if (typeof data.master === "number") masterSlider.value = data.master;
-        if (typeof data.music === "number")  musicSlider.value  = data.music;
-        if (typeof data.effects === "number") effectsSlider.value = data.effects;
-        if (typeof data.brightness === "number") brightnessSlider.value = data.brightness;
-        if (typeof data.contrast === "number") contrastSlider.value = data.contrast;
-        if (typeof data.sharpness === "number") sharpnessSlider.value = data.sharpness;
-        if (typeof data.mouse === "number") mouseSlider.value = data.mouse;
-        if (data.fps) fpsSelect.value = data.fps;
-      } catch (e) {
-        console.warn("Konnte Einstellungen nicht laden:", e);
+      if (raw) {
+        try {
+          const data = JSON.parse(raw);
+          if (typeof data.master === "number")    masterSlider.value    = data.master;
+          if (typeof data.music === "number")     musicSlider.value     = data.music;
+          if (typeof data.effects === "number")   effectsSlider.value   = data.effects;
+          if (typeof data.brightness === "number")brightnessSlider.value= data.brightness;
+          if (typeof data.contrast === "number")  contrastSlider.value  = data.contrast;
+          if (typeof data.sharpness === "number") sharpnessSlider.value = data.sharpness;
+          if (typeof data.mouse === "number")     mouseSlider.value     = data.mouse;
+          if (data.fps)                            fpsSelect.value      = data.fps;
+        } catch (e) {
+          console.warn("Konnte Einstellungen nicht laden:", e);
+        }
       }
 
       applyDisplaySettings();
       applyMouseSensitivity();
       applyMusicVolume();
-      applyMasterVolume();
+      applyEffectVolumes();
 
-      document.getElementById("masterVolumeValue").textContent   = masterSlider.value + "%";
-      document.getElementById("musicVolumeValue").textContent    = musicSlider.value + "%";
-      document.getElementById("effectsVolumeValue").textContent  = effectsSlider.value + "%";
-      document.getElementById("brightnessValue").textContent     = brightnessSlider.value + "%";
-      document.getElementById("contrastValue").textContent       = contrastSlider.value + "%";
-      document.getElementById("sharpnessValue").textContent      = sharpnessSlider.value + "%";
-      document.getElementById("mouseSensitivityValue").textContent = mouseSlider.value;
+      document.getElementById("masterVolumeValue").textContent      = masterSlider.value + "%";
+      document.getElementById("musicVolumeValue").textContent       = musicSlider.value + "%";
+      document.getElementById("effectsVolumeValue").textContent     = effectsSlider.value + "%";
+      document.getElementById("brightnessValue").textContent        = brightnessSlider.value + "%";
+      document.getElementById("contrastValue").textContent          = contrastSlider.value + "%";
+      document.getElementById("sharpnessValue").textContent         = sharpnessSlider.value + "%";
+      document.getElementById("mouseSensitivityValue").textContent  = mouseSlider.value;
     }
 
     const resetBtn = document.getElementById("resetSettings");
     const applyBtn = document.getElementById("applySettings");
 
     resetBtn.addEventListener("click", () => {
-      masterSlider.value   = 80;
-      musicSlider.value    = 60;
-      effectsSlider.value  = 75;
+      masterSlider.value     = 80;
+      musicSlider.value      = 60;
+      effectsSlider.value    = 75;
       brightnessSlider.value = 50;
-      contrastSlider.value = 50;
-      sharpnessSlider.value = 50;
-      mouseSlider.value    = 10;
-      fpsSelect.value      = "60";
+      contrastSlider.value   = 50;
+      sharpnessSlider.value  = 50;
+      mouseSlider.value      = 10;
+      fpsSelect.value        = "60";
 
       applyDisplaySettings();
       applyMouseSensitivity();
       applyMusicVolume();
-      applyMasterVolume();
+      applyEffectVolumes();
       saveSettings();
       loadSettings();
     });
