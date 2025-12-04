@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <title>Raum 1 – Allgemeinwissen</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: #050505;
+      color: #f5f5f5;
+      font-family: Copperplate, Papyrus, fantasy;
+      min-height: 100vh;
+      overflow: hidden;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+      background-size: 60px 60px;
+      opacity: 0.25;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .hud {
+      position: fixed;
+      top: 24px;
+      left: 40px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      font-family: Copperplate, Papyrus, fantasy;
+      z-index: 2;
+    }
+
+    .hud-top {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .hud-avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      border: 2px solid #f5f5f5;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-weight: 700;
+      font-size: 1rem;
+      background: radial-gradient(circle at 30% 20%, #e91e63, #5a0b24);
+      box-shadow: 0 0 8px rgba(0,0,0,0.6);
+    }
+
+    .hud-lives {
+      font-size: 1.1rem;
+      text-shadow: 0 0 4px rgba(0,0,0,0.8);
+    }
+
+    .hud-lives span {
+      font-weight: 700;
+    }
+
+    .hud-timer {
+      font-size: 0.85rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #c3c3c3;
+      text-shadow: 0 0 4px rgba(0,0,0,0.7);
+    }
+
+    .room-wrapper {
+      position: relative;
+      z-index: 1;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .room-frame {
+      width: 70%;
+      max-width: 1500px;
+      height: 65vh;
+      border: 2px solid #f5f5f5;
+      position: relative;
+      padding: 30px 40px;
+    }
+
+    .room-title {
+      position: absolute;
+      top: 14px;
+      left: 16px;
+      font-size: 1rem;
+    }
+
+    .section-label {
+      position: absolute;
+      top: 18px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 0.9rem;
+      letter-spacing: 0.15em;
+    }
+
+    .section-main-title {
+      position: absolute;
+      top: 45px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 2rem;
+    }
+
+    /* Panel A */
+    .panel-a {
+      position: absolute;
+      top: 130px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 70%;
+      max-width: 950px;
+      border-radius: 22px;
+      border: 2px solid #f5f5f5;
+      padding: 26px 40px 30px;
+      text-align: center;
+    }
+
+    .progress-dots {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      margin-bottom: 18px;
+    }
+
+    .dot {
+      width: 13px;
+      height: 13px;
+      border-radius: 50%;
+      border: 2px solid #f5f5f5;
+      background: transparent;
+    }
+
+    .dot.active {
+      background: #f5f5f5;
+    }
+
+    .question-text {
+      margin-top: 8px;
+      font-size: 1.5rem;
+      min-height: 50px;
+    }
+
+    .answers {
+      display: flex;
+      justify-content: center;
+      gap: 26px;
+      margin-top: 40px;
+    }
+
+    .answer-btn {
+      width: 140px;
+      height: 190px;
+      border-radius: 16px;
+      border: 2px solid #f5f5f5;
+      background: transparent;
+      cursor: pointer;
+      font-size: 0.95rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      transition: background 0.2s ease, transform 0.1s ease, box-shadow 0.2s ease;
+    }
+
+    .answer-text {
+      font-size: 1.5rem;
+      text-align: center;
+      padding: 0 10px;
+      color: #f5f5f5;
+      font-family: Copperplate, Papyrus, fantasy;
+    }
+
+    .answer-btn:hover {
+      background: #1b1b1b;
+      transform: translateY(-2px);
+      box-shadow: 0 0 10px rgba(255,255,255,0.08);
+    }
+
+    .answer-hint {
+      margin-top: 32px;
+      font-size: 1.1rem;
+      opacity: 0.8;
+    }
+
+    /* Tür B rechts */
+    .door-b {
+      position: absolute;
+      right: 60px;
+      top: 50%;
+      transform: translateY(-50%);
+      text-align: center;
+      font-size: 0.9rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .door-b-triangle {
+      width: 0;
+      height: 0;
+      border-top: 25px solid transparent;
+      border-bottom: 25px solid transparent;
+      border-left: 40px solid #f5f5f5;
+      margin-top: 4px;
+    }
+
+    .door-b-status {
+      margin-top: 4px;
+      font-size: 1.1rem;
+    }
+
+    .door-b-btn {
+      margin-top: 8px;
+      padding: 6px 16px;
+      border-radius: 999px;
+      border: 1px solid #f5f5f5;
+      background: transparent;
+      color: #f5f5f5;
+      cursor: pointer;
+      font-size: 0.8rem;
+      display: none;
+      font-family: Copperplate, Papyrus, fantasy;
+    }
+
+    .door-b-btn:hover {
+      background: #1b1b1b;
+    }
+
+    .door-b.open .door-b-triangle {
+      border-left-color: #00ff99;
+    }
+
+    .door-b.open .door-b-status {
+      color: #00ff99;
+    }
+
+    .door-b.open .door-b-btn {
+      display: inline-block;
+    }
+
+    /* Panel B – wie Panel A */
+    .panel-b {
+      position: absolute;
+      top: 130px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 70%;
+      max-width: 950px;
+      border-radius: 22px;
+      border: 2px solid #f5f5f5;
+      padding: 26px 40px 30px;
+      text-align: center;
+      display: none;
+    }
+
+    .panel-b-title {
+      font-size: 1.5rem;
+      margin-bottom: 18px;
+    }
+
+    .sequence-text {
+      font-size: 1.3rem;
+      margin-bottom: 18px;
+    }
+
+    .panel-b .answers {
+      display: flex;
+      justify-content: center;
+      gap: 26px;
+      margin-top: 40px;
+    }
+
+    .panel-b .answer-btn {
+      width: 140px;
+      height: 190px;
+      border-radius: 16px;
+      border: 2px solid #f5f5f5;
+      background: transparent;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      transition: background 0.2s ease, transform 0.1s ease, box-shadow 0.2s ease;
+    }
+
+    .panel-b .answer-btn:hover {
+      background: #1b1b1b;
+      transform: translateY(-2px);
+      box-shadow: 0 0 10px rgba(255,255,255,0.08);
+    }
+
+    .panel-b .answer-btn.highlight {
+  background: #00ff99;
+  color: #000;
+  box-shadow: 0 0 18px rgba(0, 255, 153, 0.7);
+}
+
+
+    .answer-number {
+      font-size: 2.2rem;
+      font-family: Copperplate, Papyrus, fantasy;
+      color: #f5f5f5;
+    }
+  </style>
+</head>
+<body>
+  <div class="hud">
+    <div class="hud-top">
+      <div class="hud-avatar" id="hudInitial">P</div>
+      <div class="hud-lives">
+        <span id="hudLives">x05</span>
+      </div>
+    </div>
+    <div class="hud-timer">
+      ZEIT IM RAUM: <span id="hudTimer">00:00:00</span>
+    </div>
+  </div>
+
+  <div class="room-wrapper">
+    <div class="room-frame">
+      <div class="room-title">Raum 1</div>
+      <div class="section-label" id="sectionLabel">A</div>
+      <div class="section-main-title">Allgemeinwissen</div>
+
+      <div class="panel-a" id="panelA">
+        <div class="progress-dots" id="progressDots">
+          <div class="dot"></div>
+          <div class="dot"></div>
+          <div class="dot"></div>
+          <div class="dot"></div>
+          <div class="dot"></div>
+        </div>
+
+        <div class="question-text" id="questionText"></div>
+
+        <div class="answers">
+          <button class="answer-btn" data-index="0">
+            <div class="answer-text" id="answerText0"></div>
+          </button>
+          <button class="answer-btn" data-index="1">
+            <div class="answer-text" id="answerText1"></div>
+          </button>
+          <button class="answer-btn" data-index="2">
+            <div class="answer-text" id="answerText2"></div>
+          </button>
+        </div>
+
+        <div class="answer-hint">Klicke auf die richtige Antwort.</div>
+      </div>
+
+      <div class="door-b" id="doorB">
+        <div>B</div>
+        <div class="door-b-triangle"></div>
+        <div class="door-b-status" id="doorStatus">geschlossen</div>
+        <button class="door-b-btn" id="doorBButton">Raum B betreten</button>
+      </div>
+
+   <div class="panel-b" id="panelB">
+  <div class="panel-b-title">Raum B – Merkspiel</div>
+  <div class="sequence-text">
+    Merke dir die blinkende Reihenfolge der Karten.<br>
+    Nachdem die Sequenz angezeigt wurde, klicke die Zahlen
+    in genau derselben Reihenfolge an.
+  </div>
+
+  <div class="answers">
+    <button class="answer-btn" data-b="1">
+      <div class="answer-number">1</div>
+    </button>
+    <button class="answer-btn" data-b="2">
+      <div class="answer-number">2</div>
+    </button>
+    <button class="answer-btn" data-b="3">
+      <div class="answer-number">3</div>
+    </button>
+  </div>
+</div>
+
+  <script>
+    // HUD
+    const hudInitial = document.getElementById("hudInitial");
+    const hudLivesEl = document.getElementById("hudLives");
+    const hudTimerEl = document.getElementById("hudTimer");
+
+    const storedName = (localStorage.getItem("escape_username") || "Player").trim();
+    let lives = parseInt(localStorage.getItem("escape_lives") || "5", 10);
+
+    hudInitial.textContent = storedName.charAt(0).toUpperCase() || "P";
+
+    function updateLivesDisplay() {
+      const value = String(lives).padStart(2, "0");
+      hudLivesEl.textContent = "x" + value;
+    }
+    updateLivesDisplay();
+
+    const roomStartTime = Date.now();
+    function updateTimer() {
+      const diff = Date.now() - roomStartTime;
+      const totalSeconds = Math.floor(diff / 1000);
+      const hours = Math.floor(totalSeconds / 3600);
+      const minutes = Math.floor((totalSeconds % 3600) / 60);
+      const seconds = totalSeconds % 60;
+      hudTimerEl.textContent =
+        String(hours).padStart(2, "0") + ":" +
+        String(minutes).padStart(2, "0") + ":" +
+        String(seconds).padStart(2, "0");
+    }
+    setInterval(updateTimer, 1000);
+    updateTimer();
+
+    // Helper: zurück in Lobby mit Leben-Verlust
+    function loseLifeAndReturn() {
+      lives = Math.max(lives - 1, 0);
+      localStorage.setItem("escape_lives", String(lives));
+      localStorage.setItem("escape_room1_state", "failed");
+      window.location.href = "screen3.html";
+    }
+
+    function completeRoom1() {
+      localStorage.setItem("escape_room1_state", "success");
+      window.location.href = "screen3.html";
+    }
+
+    // ========= FRAGENPOOL mit Rotation über mehrere Besuche =========
+    const questionPool = [
+      {
+        q: "Wie viele Kontinente werden klassisch gezählt?",
+        answers: ["Fünf", "Sechs", "Sieben"],
+        correct: 2
+      },
+      {
+        q: "Welcher Planet ist der Sonne am nächsten?",
+        answers: ["Venus", "Merkur", "Mars"],
+        correct: 1
+      },
+      {
+        q: "Wie viele Minuten hat eine Stunde?",
+        answers: ["50", "60", "70"],
+        correct: 1
+      },
+      {
+        q: "Welche Farbe hat die mittlere Ampel?",
+        answers: ["Rot", "Gelb", "Grün"],
+        correct: 1
+      },
+      {
+        q: "In welcher Einheit wird elektrische Spannung gemessen?",
+        answers: ["Volt", "Watt", "Ampere"],
+        correct: 0
+      },
+      {
+        q: "Wie viele Tage hat ein Schaltjahr?",
+        answers: ["365", "366", "367"],
+        correct: 1
+      },
+      {
+        q: "Wie heißt die Hauptstadt von Italien?",
+        answers: ["Rom", "Mailand", "Neapel"],
+        correct: 0
+      },
+      {
+        q: "Welches Tier ist ein Säugetier?",
+        answers: ["Hai", "Delfin", "Forelle"],
+        correct: 1
+      },
+      {
+        q: "Welche Form hat ein Stoppschild?",
+        answers: ["Sechseck", "Achteck", "Fünfeck"],
+        correct: 1
+      },
+      {
+        q: "Wie viele Seiten hat ein Quadrat?",
+        answers: ["Drei", "Vier", "Fünf"],
+        correct: 1
+      },
+      {
+        q: "Welche Farbe hat Kupfer typischerweise?",
+        answers: ["Silber", "Gold", "Rötlich"],
+        correct: 2
+      },
+      {
+        q: "Welcher dieser Berufe arbeitet im Krankenhaus?",
+        answers: ["Mechaniker", "Chirurg", "Bäcker"],
+        correct: 1
+      },
+      {
+        q: "Was ist H2O?",
+        answers: ["Sauerstoff", "Wasser", "Kohlenstoffdioxid"],
+        correct: 1
+      },
+      {
+        q: "Wie viele Sekunden hat eine Minute?",
+        answers: ["60", "80", "100"],
+        correct: 0
+      },
+      {
+        q: "Welcher Kontinent ist am größten?",
+        answers: ["Afrika", "Asien", "Europa"],
+        correct: 1
+      },
+      {
+        q: "Welche Sprache spricht man hauptsächlich in Brasilien?",
+        answers: ["Spanisch", "Portugiesisch", "Französisch"],
+        correct: 1
+      },
+      {
+        q: "Wie viele Beine hat eine Spinne?",
+        answers: ["Sechs", "Acht", "Zehn"],
+        correct: 1
+      },
+      {
+        q: "Welche Jahreszeit folgt auf den Sommer?",
+        answers: ["Herbst", "Winter", "Frühling"],
+        correct: 0
+      },
+      {
+        q: "Welche Einheit benutzt man für Temperatur im Alltag (in Deutschland)?",
+        answers: ["Kelvin", "Fahrenheit", "Grad Celsius"],
+        correct: 2
+      },
+      {
+        q: "Was ist größer?",
+        answers: ["1 Kilometer", "500 Meter", "100 Meter"],
+        correct: 0
+      }
+    ];
+
+    const QUESTIONS_PER_RUN = 5;
+    const QUESTION_OFFSET_KEY = "escape_room1_question_offset";
+
+    // Startindex aus localStorage lesen und absichern
+    let questionOffset = parseInt(localStorage.getItem(QUESTION_OFFSET_KEY) || "0", 10);
+    if (isNaN(questionOffset) || questionOffset < 0 || questionOffset >= questionPool.length) {
+      questionOffset = 0;
+    }
+
+    // Aktuelle 5 Fragen aus dem Pool nehmen (mit Wrap-around)
+    const questions = [];
+    for (let i = 0; i < QUESTIONS_PER_RUN; i++) {
+      const idx = (questionOffset + i) % questionPool.length;
+      questions.push(questionPool[idx]);
+    }
+
+    // Offset schon beim Betreten weiterschieben,
+    // damit beim nächsten Eintritt andere Fragen kommen
+    let newOffset = (questionOffset + QUESTIONS_PER_RUN) % questionPool.length;
+    localStorage.setItem(QUESTION_OFFSET_KEY, String(newOffset));
+
+    // ========= Restliche Logik bleibt gleich, nutzt jetzt "questions" =========
+    let currentQuestion = 0;
+
+    const questionTextEl = document.getElementById("questionText");
+    const answerText0 = document.getElementById("answerText0");
+    const answerText1 = document.getElementById("answerText1");
+    const answerText2 = document.getElementById("answerText2");
+    const dots = Array.from(document.querySelectorAll("#progressDots .dot"));
+    const answerButtonsA = Array.from(document.querySelectorAll(".panel-a .answer-btn"));
+
+    function renderQuestion() {
+      const q = questions[currentQuestion];
+      questionTextEl.textContent = q.q;
+      answerText0.textContent = q.answers[0];
+      answerText1.textContent = q.answers[1];
+      answerText2.textContent = q.answers[2];
+
+      dots.forEach((d, i) => {
+        d.classList.toggle("active", i <= currentQuestion);
+      });
+    }
+
+    function handleAnswerClick(event) {
+      const index = parseInt(event.currentTarget.getAttribute("data-index"), 10);
+      const q = questions[currentQuestion];
+
+      if (index === q.correct) {
+        currentQuestion++;
+        if (currentQuestion >= questions.length) {
+          openDoorB();
+        } else {
+          renderQuestion();
+        }
+      } else {
+        alert("Falsche Antwort in Raum A. Du kehrst in die Lobby zurück.");
+        loseLifeAndReturn();
+      }
+    }
+
+    answerButtonsA.forEach(btn => btn.addEventListener("click", handleAnswerClick));
+    renderQuestion();
+
+    // Raum B
+    const doorB = document.getElementById("doorB");
+    const doorStatus = document.getElementById("doorStatus");
+    const doorBButton = document.getElementById("doorBButton");
+    const panelB = document.getElementById("panelB");
+    const panelA = document.getElementById("panelA");
+    const sectionLabel = document.getElementById("sectionLabel");
+    const answerButtonsB = Array.from(document.querySelectorAll(".panel-b .answer-btn"));
+
+    function openDoorB() {
+  doorB.classList.add("open");
+  doorStatus.textContent = "offen";
+  alert("Raum A geschafft! Tür B ist jetzt geöffnet.");
+
+  doorBButton.addEventListener("click", () => {
+  if (panelA) panelA.style.display = "none";  // Raum A verstecken
+  panelB.style.display = "block";             // Raum B anzeigen
+  doorB.style.display = "none";               // Tür verschwinden lassen
+  if (sectionLabel) sectionLabel.textContent = "B"; // Buchstabe oben wechseln
+
+  startRoomB(); // Merkspiel starten (Simon-Says)
+});
+
+}
+
+
+    // ===== Raum B – Merkspiel (Simon-Says-Style) =====
+let sequenceB = [];
+let playerIndexB = 0;
+let acceptingInputB = false;
+
+// Zufällige Sequenz aus 1-3 erzeugen (z.B. Länge 4)
+function generateSequenceB(length = 4) {
+  sequenceB = [];
+  for (let i = 0; i < length; i++) {
+    const value = Math.floor(Math.random() * 3) + 1; // 1, 2 oder 3
+    sequenceB.push(value);
+  }
+}
+
+// Sequenz abspielen: Karten nacheinander aufleuchten lassen
+function playSequenceB() {
+  acceptingInputB = false;
+  playerIndexB = 0;
+  let i = 0;
+
+  function step() {
+    if (i >= sequenceB.length) {
+      // Spieler ist jetzt dran
+      acceptingInputB = true;
+      return;
+    }
+
+    const value = sequenceB[i];
+    const btn = document.querySelector(
+      '.panel-b .answer-btn[data-b="' + value + '"]'
+    );
+
+    if (btn) {
+      btn.classList.add("highlight");
+      setTimeout(() => {
+        btn.classList.remove("highlight");
+        i++;
+        setTimeout(step, 250); // kleine Pause vor der nächsten Karte
+      }, 600); // wie lange die Karte leuchtet
+    } else {
+      // falls irgendwas schiefgeht, trotzdem nicht hängen bleiben
+      i++;
+      setTimeout(step, 250);
+    }
+  }
+
+  step();
+}
+
+function startRoomB() {
+  generateSequenceB(4);   // hier kannst du die Schwierigkeit ändern
+  playSequenceB();
+}
+
+function handleBClick(event) {
+  if (!acceptingInputB) return; // während die Sequenz abgespielt wird, ignorieren
+
+  const value = parseInt(event.currentTarget.getAttribute("data-b"), 10);
+  const expected = sequenceB[playerIndexB];
+
+  if (value === expected) {
+    playerIndexB++;
+    if (playerIndexB >= sequenceB.length) {
+      alert("Stark! Du hast die komplette Sequenz richtig wiederholt. Raum 1 ist geschafft.");
+      completeRoom1();
+    }
+  } else {
+    alert("Falsche Reihenfolge in Raum B. Du kehrst in die Lobby zurück.");
+    loseLifeAndReturn();
+  }
+}
+
+
+    answerButtonsB.forEach(btn => btn.addEventListener("click", handleBClick));
+  </script>
+</body>
+</html>
