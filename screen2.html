@@ -266,9 +266,9 @@
 
 
       const settings = {
-        master:     100,                      // Master = UI-Effekte
-        music:      70,                       // Hintergrundmusik
-        effects:    Number(volume.value),     // nur Klick/Hover
+        master:     100,                      
+        music:      70,                       
+        effects:    Number(volume.value),     
         brightness: Number(brightness.value),
         contrast:   Number(contrast.value),
         sharpness:  50,
@@ -277,7 +277,6 @@
       };
       localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
 
-      // ⬇️ HIER: globalen Startzeitpunkt setzen (Start des Spiels)
       localStorage.setItem("escape_global_start_time", String(Date.now()));
 
       window.location.href = "screen3.html";

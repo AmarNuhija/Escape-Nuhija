@@ -592,7 +592,6 @@
 
     const storedName = (localStorage.getItem("escape_username") || "Player").trim();
     let lives = parseInt(localStorage.getItem("escape_lives") || "5", 10);
-    // Wenn keine Leben mehr vorhanden sind, sofort zum Game-Over-Screen
 if (lives <= 0) {
   window.location.href = "gameover.html";
 }
@@ -731,13 +730,13 @@ if (lives <= 0) {
     function applyMusicVolume() {
       if (!bgMusic) return;
       const volMusic = Number(musicSlider.value) / 100;
-      bgMusic.volume = volMusic;  // Master beeinflusst Musik NICHT
+      bgMusic.volume = volMusic; 
     }
 
     function applyEffectVolumes() {
       const master  = Number(masterSlider.value)  / 100;
       const effects = Number(effectsSlider.value) / 100;
-      const vol = master * effects;              // UI-Lautstärke = Master * Effekte
+      const vol = master * effects;            
       if (sndClick) sndClick.volume = vol;
       if (sndHover) sndHover.volume = vol;
     }

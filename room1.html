@@ -469,7 +469,7 @@
     }
     updateLivesDisplay();
 
-    // =============== GLOBALER TIMER (selbe Session wie Lobby) ===============
+    // =============== GLOBALER TIMER ===============
     const SESSION_TIME_KEY = "escape_session_start";
 
     function getSessionStartTime() {
@@ -504,7 +504,6 @@
       localStorage.setItem("escape_room1_state", "failed");
 
       if (lives <= 0) {
-        // keine Leben mehr -> Death-Animation und dann Game Over Screen
         playDeathAnimationAndGoToGameOver();
       } else {
         // noch Leben übrig -> ganz normal zurück in die Lobby
@@ -517,14 +516,12 @@
       const overlay = document.getElementById("deathOverlay");
 
       if (!overlay) {
-        // Falls irgendwas schiefgeht, trotzdem Game Over
         window.location.href = "gameover.html";
         return;
       }
 
       overlay.classList.add("active");
 
-      // Nach der Animationsdauer (1.2s) + kleiner Puffer
       setTimeout(() => {
         window.location.href = "gameover.html";
       }, 1300);
@@ -705,21 +702,17 @@
     const QUESTIONS_PER_RUN = 5;
     const QUESTION_OFFSET_KEY = "escape_room1_question_offset";
 
-    // Startindex aus localStorage lesen und absichern
     let questionOffset = parseInt(localStorage.getItem(QUESTION_OFFSET_KEY) || "0", 10);
     if (isNaN(questionOffset) || questionOffset < 0 || questionOffset >= questionPool.length) {
       questionOffset = 0;
     }
 
-    // Aktuelle 5 Fragen aus dem Pool nehmen (mit Wrap-around)
     const questions = [];
     for (let i = 0; i < QUESTIONS_PER_RUN; i++) {
       const idx = (questionOffset + i) % questionPool.length;
       questions.push(questionPool[idx]);
     }
 
-    // Offset schon beim Betreten weiterschieben,
-    // damit beim nächsten Eintritt andere Fragen kommen
     const newOffset = (questionOffset + QUESTIONS_PER_RUN) % questionPool.length;
     localStorage.setItem(QUESTION_OFFSET_KEY, String(newOffset));
 
@@ -784,7 +777,7 @@
         doorB.style.display = "none";
         if (sectionLabel) sectionLabel.textContent = "B";
 
-        startRoomB(); // Simon-Says-Spiel starten
+        startRoomB();
       }, { once: true });
     }
 
@@ -834,7 +827,7 @@
     }
 
     function startRoomB() {
-      generateSequenceB(4);   // Schwierigkeit = Länge der Sequenz
+      generateSequenceB(4);  
       playSequenceB();
     }
 

@@ -144,7 +144,6 @@
     const ROOM1_STATE_KEY = "escape_room1_state";
     const ROOM1_OFFSET_KEY = "escape_room1_question_offset";
 
-    // Username & Welt anzeigen
     (function initInfo() {
       const name = (localStorage.getItem("escape_username") || "Player").trim();
       document.getElementById("goUsername").textContent =
@@ -156,16 +155,12 @@
     })();
 
     function resetProgressForCurrentWorld() {
-      // Leben, Room1-Status usw. zurücksetzen
       localStorage.setItem(LIVES_KEY, "5");
       localStorage.removeItem(ROOM1_STATE_KEY);
       localStorage.removeItem(ROOM1_OFFSET_KEY);
-      // Hier später weitere Räume löschen:
-      // localStorage.removeItem("escape_room2_state"); etc.
     }
 
     function restartWorld() {
-      // gleiche Welt, nur alles resetten
       resetProgressForCurrentWorld();
       window.location.href = "screen3.html";
     }
@@ -178,7 +173,7 @@
 
       resetProgressForCurrentWorld();
 
-      // Optional: globalen Startzeitpunkt neu setzen
+     
       localStorage.setItem(
         "escape_global_start_time",
         String(Date.now())
@@ -188,7 +183,6 @@
     }
 
     function backToMenu() {
-      // Falls du trotz 0 Leben in die Lobby zurück willst
       window.location.href = "screen3.html";
     }
   </script>

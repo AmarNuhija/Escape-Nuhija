@@ -64,7 +64,7 @@
       filter: drop-shadow(0 0 6px rgba(0,0,0,0.7));
     }
 
-    /* Glitch-Effekt auf dem ganzen Screen */
+    
     .glitch-overlay {
       position: absolute;
       inset: 0;
@@ -81,7 +81,6 @@
       z-index: 2;
     }
 
-    /* längerer Glitch: 1.6s */
     .glitch-active .glitch-overlay {
       animation: glitch-flicker 1.6s linear forwards;
     }
@@ -104,7 +103,6 @@
       100% { opacity: 0; }
     }
 
-    /* stärkeres Rütteln */
     @keyframes glitch-move {
       0%   { transform: translate(0,0); opacity: 1; }
       10%  { transform: translate(-8px, 5px) skew(-3deg); }
@@ -117,7 +115,7 @@
       100% { transform: translate(0,0); opacity: 0; }
     }
 
-    /* Start-Button, damit der Browser Audio abspielen darf */
+
     #startBtn {
       position: absolute;
       inset: 0;
@@ -141,26 +139,23 @@
       box-shadow: 0 0 14px rgba(255,255,255,0.2);
     }
 
-    /* Audio-Element unsichtbar */
     #whooshSound {
       display: none;
     }
   </style>
 </head>
 <body>
-  <!-- Start-Button für User-Interaktion -->
   <button id="startBtn">Klicken, um zu starten</button>
 
   <div class="text" id="typewriter"></div><span class="cursor"></span>
 
-  <!-- Logo-Bild -->
+  
   <div class="logo" id="logo">
     <img src="logo.png" alt="Escape Nuhija Logo">
   </div>
 
   <div class="glitch-overlay"></div>
 
-  <!-- Whoosh-/Wind-Sound – deine Datei WooshSound.mp4 -->
   <audio id="whooshSound" src="sweet-transition-153787.mp3"></audio>
 
   <script>
@@ -205,7 +200,7 @@
 
       body.classList.add("glitch-active");
 
-      // Nach Glitch-Effekt zu Screen 2 weiterleiten
+      
       setTimeout(() => {
         window.location.href = "screen2.html";
       }, 6500); 
