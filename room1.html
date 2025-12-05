@@ -322,6 +322,55 @@
       font-family: Copperplate, Papyrus, fantasy;
       color: #f5f5f5;
     }
+
+        /* ===== Death-Overlay (Game-Over-Animation) ===== */
+    #deathOverlay {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 999;            /* über allem */
+      display: none;           /* standard: unsichtbar */
+    }
+
+    #deathOverlay.active {
+      display: block;
+    }
+
+    .death-panel {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 0;                /* startet bei 0, wächst in der Animation */
+      background: #000;
+    }
+
+    .death-left {
+      left: 0;
+    }
+
+    .death-right {
+      right: 0;
+    }
+
+    /* Wenn das Overlay aktiv ist, sollen beide Paneele animieren */
+    #deathOverlay.active .death-left {
+      animation: deathCloseLeft 1.2s forwards;
+    }
+
+    #deathOverlay.active .death-right {
+      animation: deathCloseRight 1.2s forwards;
+    }
+
+    @keyframes deathCloseLeft {
+      0%   { width: 0; }
+      100% { width: 50vw; }   /* Hälfte des Screens von links */
+    }
+
+    @keyframes deathCloseRight {
+      0%   { width: 0; }
+      100% { width: 50vw; }   /* Hälfte des Screens von rechts */
+    }
+
   </style>
 </head>
 <body>
@@ -408,6 +457,10 @@
     const storedName = (localStorage.getItem("escape_username") || "Player").trim();
     let lives = parseInt(localStorage.getItem("escape_lives") || "5", 10);
 
+    if (lives <= 0) {
+      window.location.href = "gameover.html";
+    }
+
     hudInitial.textContent = storedName.charAt(0).toUpperCase() || "P";
 
     function updateLivesDisplay() {
@@ -445,13 +498,39 @@
     updateTimer();
     setInterval(updateTimer, 1000);
 
-    // Helper: zurück in Lobby mit Leben-Verlust
-    function loseLifeAndReturn() {
+       function loseLifeAndReturn() {
       lives = Math.max(lives - 1, 0);
       localStorage.setItem("escape_lives", String(lives));
       localStorage.setItem("escape_room1_state", "failed");
-      window.location.href = "screen3.html";
+
+      if (lives <= 0) {
+        // keine Leben mehr -> Death-Animation und dann Game Over Screen
+        playDeathAnimationAndGoToGameOver();
+      } else {
+        // noch Leben übrig -> ganz normal zurück in die Lobby
+        window.location.href = "screen3.html";
+      }
     }
+
+
+    function playDeathAnimationAndGoToGameOver() {
+      const overlay = document.getElementById("deathOverlay");
+
+      if (!overlay) {
+        // Falls irgendwas schiefgeht, trotzdem Game Over
+        window.location.href = "gameover.html";
+        return;
+      }
+
+      overlay.classList.add("active");
+
+      // Nach der Animationsdauer (1.2s) + kleiner Puffer
+      setTimeout(() => {
+        window.location.href = "gameover.html";
+      }, 1300);
+    }
+
+
 
     function completeRoom1() {
       localStorage.setItem("escape_room1_state", "success");
@@ -559,7 +638,68 @@
         q: "Was ist größer?",
         answers: ["1 Kilometer", "500 Meter", "100 Meter"],
         correct: 0
-      }
+      },
+      {  q: "Wie viele Farben hat ein Regenbogen?",
+        answers: ["Fünf", "Sechs", "Sieben"],
+        correct: 2
+      },
+      { q: "Welches Element hat das chemische Symbol O?",
+        answers: ["Gold", "Sauerstoff", "Silber"],
+        correct: 1
+      },
+      {
+        q: "Wie viele Planeten hat unser Sonnensystem?",
+        answers: ["Acht", "Neun", "Zehn"],
+        correct: 0
+      },
+      {
+        q: "Welcher Vogel kann nicht fliegen?",
+        answers: ["Pinguin", "Adler", "Spatz"],
+        correct: 0
+      },
+      { q: "Was ist die Hauptstadt von Frankreich?",
+        answers: ["Berlin", "Madrid", "Paris"],
+        correct: 2
+      },
+      {
+        q: "Was ist der 13 Buchstabe im deutschen Alphabet?",
+        answers: ["L", "M", "N"],
+        correct: 1
+      },
+          {
+      q: "Welches ist das größte Land Südamerikas?",
+      answers: ["Brasilien", "Argentinien", "Peru"],
+      correct: 0
+    },
+    {
+      q: "Wie viele Zähne hat ein erwachsener Mensch normalerweise?",
+      answers: ["28", "30", "32"],
+      correct: 2
+    },
+    {
+      q: "Welcher dieser Flüsse ist der längste der Welt?",
+      answers: ["Nil", "Amazonas", "Yangtze"],
+      correct: 1
+    },
+    {
+      q: "In welchem Jahr landeten die ersten Menschen auf dem Mond?",
+      answers: ["1965", "1969", "1972"],
+      correct: 1
+    },
+    {
+      q: "Welches Tier ist das größte lebende Landtier?",
+      answers: ["Giraffe", "Elefant", "Nashorn"],
+      correct: 1
+    },
+    {
+  q: "In welchem Jahr fiel die Berliner Mauer?",
+  answers: ["1989", "1991", "1979"],
+  correct: 0
+},    {
+      q: "Welcher dieser Stoffe ist ein Metall?",
+      answers: ["Holz", "Eisen", "Kunststoff"],
+      correct: 1
+    }
     ];
 
     const QUESTIONS_PER_RUN = 5;
@@ -718,5 +858,9 @@
 
     answerButtonsB.forEach(btn => btn.addEventListener("click", handleBClick));
   </script>
+  <div id="deathOverlay">
+    <div class="death-panel death-left"></div>
+    <div class="death-panel death-right"></div>
+  </div>
 </body>
 </html>

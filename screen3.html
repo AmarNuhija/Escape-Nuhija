@@ -471,7 +471,7 @@
         </div>
 
         <div class="grid">
-          <div class="slot" onclick="startLevel(1)">Raum 1</div>
+          <div class="slot" onclick="startLevel(1)">Raum 1 - Das Vorwissen</div>
           <div class="slot" onclick="startLevel(2)">Raum 2</div>
           <div class="slot" onclick="startLevel(3)">Raum 3</div>
           <div class="slot locked">Locked</div>
@@ -592,6 +592,11 @@
 
     const storedName = (localStorage.getItem("escape_username") || "Player").trim();
     let lives = parseInt(localStorage.getItem("escape_lives") || "5", 10);
+    // Wenn keine Leben mehr vorhanden sind, sofort zum Game-Over-Screen
+if (lives <= 0) {
+  window.location.href = "gameover.html";
+}
+
 
     hudInitial.textContent = storedName.charAt(0).toUpperCase() || "P";
 

@@ -260,6 +260,10 @@
 
       localStorage.setItem("escape_username", username);
       localStorage.setItem("escape_lives", "5");
+      if (!localStorage.getItem("escape_world_id")) {
+        localStorage.setItem("escape_world_id", "1");
+        }
+
 
       const settings = {
         master:     100,                      // Master = UI-Effekte
