@@ -439,6 +439,76 @@
     #bgMusic {
       display: none;
     }
+
+    
+    #messageOverlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.8);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 20;
+    }
+
+    #messageOverlay.active {
+      display: flex;
+    }
+
+    .message-panel {
+      width: 90%;
+      max-width: 480px;
+      padding: 24px 26px 20px;
+      border-radius: 14px;
+      border: 1px solid #444;
+      background: radial-gradient(circle at top, #171717, #050505);
+      box-shadow: 0 0 26px rgba(0,0,0,0.9);
+      text-align: center;
+      font-family: Copperplate, Papyrus, fantasy;
+    }
+
+    .message-title {
+      font-size: 1.4rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 10px;
+    }
+
+    .message-text {
+      font-size: 0.98rem;
+      opacity: 0.9;
+      margin-bottom: 18px;
+      line-height: 1.4;
+    }
+
+    .message-buttons {
+      display: flex;
+      justify-content: center;
+      margin-top: 8px;
+    }
+
+    #messageButton {
+      padding: 8px 22px;
+      border-radius: 999px;
+      border: 1px solid #f5f5f5;
+      background: #181818;
+      color: #f5f5f5;
+      cursor: pointer;
+      font-size: 0.9rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      transition: background 0.2s ease,
+                  transform 0.1s ease,
+                  box-shadow 0.2s ease;
+      font-family: Copperplate, Papyrus, fantasy;
+    }
+
+    #messageButton:hover {
+      background: #262626;
+      transform: translateY(-1px);
+      box-shadow: 0 0 12px rgba(255,255,255,0.15);
+    }
+
   </style>
 </head>
 <body>
@@ -562,14 +632,18 @@
   </div>
 
   <script>
-    // =============== Raum-Wechsel ===============
-    function startLevel(n) {
-      if (n === 1) {
-        window.location.href = "room1.html";
-      } else {
-        alert("Raum " + n + " ist noch in Arbeit.");
-      }
-    }
+   function startLevel(n) {
+  if (n === 1) {
+    window.location.href = "room1.html";
+  } else {
+    showMessage(
+      "Noch in Arbeit",
+      "Raum " + n + " ist noch in Arbeit.",
+      "OK"
+    );
+  }
+}
+
 
     function markSuccess(n) {
       const slot = document.querySelector('.grid .slot:nth-child(' + n + ')');
@@ -612,7 +686,6 @@ if (lives <= 0) {
       markFailed(1);
     }
 
-    // =============== GLOBALER TIMER (Session) ===============
     const SESSION_TIME_KEY = "escape_session_start";
 
     function getSessionStartTime() {
@@ -641,7 +714,6 @@ if (lives <= 0) {
     updateTimer();
     setInterval(updateTimer, 1000);
 
-    // =============== Settings Overlay ===============
     const settingsButton   = document.getElementById("settingsButton");
     const settingsOverlay  = document.getElementById("settingsOverlay");
     const settingsClose    = document.getElementById("settingsClose");
@@ -660,7 +732,6 @@ if (lives <= 0) {
       }
     });
 
-    // =============== Slider-Labels ===============
     function bindSlider(id, labelId, suffix = "%") {
       const slider = document.getElementById(id);
       const label  = document.getElementById(labelId);
@@ -681,7 +752,6 @@ if (lives <= 0) {
     bindSlider("sharpness", "sharpnessValue");
     bindSlider("mouseSensitivity", "mouseSensitivityValue", "");
 
-    // =============== DISPLAY-EFFEKTE ===============
     const brightnessSlider = document.getElementById("brightness");
     const contrastSlider   = document.getElementById("contrast");
 
@@ -703,7 +773,6 @@ if (lives <= 0) {
       saveSettings();
     });
 
-    // =============== Maus-Sensitivität ===============
     const mouseSlider = document.getElementById("mouseSensitivity");
 
     function applyMouseSensitivity() {
@@ -719,7 +788,6 @@ if (lives <= 0) {
       saveSettings();
     });
 
-    // =============== Musik & UI-Sounds ===============
     const bgMusic      = document.getElementById("bgMusic");
     const musicSlider  = document.getElementById("musicVolume");
     const masterSlider = document.getElementById("masterVolume");
@@ -929,11 +997,50 @@ if (lives <= 0) {
       settingsOverlay.classList.remove("active");
     });
 
-    // Beim Laden: Einstellungen laden & Musik ggf. starten
     window.addEventListener("load", () => {
       loadSettings();
       startBgMusic();
     });
+
+        function showMessage(title, text, buttonLabel, onClose) {
+      const overlay   = document.getElementById("messageOverlay");
+      const titleEl   = document.getElementById("messageTitle");
+      const textEl    = document.getElementById("messageText");
+      const buttonEl  = document.getElementById("messageButton");
+
+      if (!overlay || !titleEl || !textEl || !buttonEl) {
+        if (typeof onClose === "function") onClose();
+        return;
+      }
+
+      titleEl.textContent   = title || "";
+      textEl.textContent    = text || "";
+      buttonEl.textContent  = buttonLabel || "OK";
+
+      overlay.classList.add("active");
+
+      buttonEl.onclick = () => {
+        overlay.classList.remove("active");
+        buttonEl.onclick = null;
+        if (typeof onClose === "function") {
+          onClose();
+        }
+      };
+    }
+
   </script>
+    <div id="messageOverlay">
+    <div class="message-panel">
+      <div class="message-title" id="messageTitle">Hinweis</div>
+      <div class="message-text" id="messageText">
+        Nachricht
+      </div>
+      <div class="message-buttons">
+        <button id="messageButton">OK</button>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
 </body>
 </html>

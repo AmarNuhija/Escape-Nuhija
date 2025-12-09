@@ -160,8 +160,8 @@
 
   <script>
     const text = "Amar Nuhija präsentiert, Escape Nuhija...";
-    const speedType = 50;   // Geschwindigkeit beim Tippen
-    const speedDelete = 10;  // Geschwindigkeit beim Löschen
+    const speedType = 100;   // Geschwindigkeit beim Tippen
+    const speedDelete = 40;  // Geschwindigkeit beim Löschen
 
     const element = document.getElementById("typewriter");
     const body = document.body;
@@ -177,7 +177,6 @@
         index++;
         setTimeout(typeText, speedType);
       } else {
-        // kurze Pause, dann löschen
         setTimeout(deleteText, 1000);
       }
     }

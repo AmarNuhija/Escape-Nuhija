@@ -371,6 +371,76 @@
       100% { width: 50vw; }   /* Hälfte des Screens von rechts */
     }
 
+        /* ===== Ingame-Dialog / Message-Overlay ===== */
+    #messageOverlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.8);
+      display: none;                 /* wird per JS eingeblendet */
+      align-items: center;
+      justify-content: center;
+      z-index: 900;                  /* unter dem DeathOverlay (999) */
+    }
+
+    #messageOverlay.active {
+      display: flex;
+    }
+
+    .message-panel {
+      width: 90%;
+      max-width: 480px;
+      padding: 24px 26px 20px;
+      border-radius: 14px;
+      border: 1px solid #444;
+      background: radial-gradient(circle at top, #171717, #050505);
+      box-shadow: 0 0 26px rgba(0,0,0,0.9);
+      text-align: center;
+      font-family: Copperplate, Papyrus, fantasy;
+    }
+
+    .message-title {
+      font-size: 1.4rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 10px;
+    }
+
+    .message-text {
+      font-size: 0.98rem;
+      opacity: 0.9;
+      margin-bottom: 18px;
+      line-height: 1.4;
+    }
+
+    .message-buttons {
+      display: flex;
+      justify-content: center;
+      margin-top: 8px;
+    }
+
+    #messageButton {
+      padding: 8px 22px;
+      border-radius: 999px;
+      border: 1px solid #f5f5f5;
+      background: #181818;
+      color: #f5f5f5;
+      cursor: pointer;
+      font-size: 0.9rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      transition: background 0.2s ease,
+                  transform 0.1s ease,
+                  box-shadow 0.2s ease;
+      font-family: Copperplate, Papyrus, fantasy;
+    }
+
+    #messageButton:hover {
+      background: #262626;
+      transform: translateY(-1px);
+      box-shadow: 0 0 12px rgba(255,255,255,0.15);
+    }
+
+
   </style>
 </head>
 <body>
@@ -481,6 +551,36 @@
       }
       return t;
     }
+
+        // ===== Ingame-Dialog-Funktion =====
+    function showMessage(title, text, buttonLabel, onClose) {
+      const overlay   = document.getElementById("messageOverlay");
+      const titleEl   = document.getElementById("messageTitle");
+      const textEl    = document.getElementById("messageText");
+      const buttonEl  = document.getElementById("messageButton");
+
+      if (!overlay || !titleEl || !textEl || !buttonEl) {
+        // Fallback: falls Overlay fehlt, trotzdem weitermachen
+        if (typeof onClose === "function") onClose();
+        return;
+      }
+
+      titleEl.textContent = title || "";
+      textEl.textContent  = text || "";
+      buttonEl.textContent = buttonLabel || "OK";
+
+      overlay.classList.add("active");
+
+      // vorherigen Klick-Handler überschreiben
+      buttonEl.onclick = () => {
+        overlay.classList.remove("active");
+        buttonEl.onclick = null;
+        if (typeof onClose === "function") {
+          onClose();
+        }
+      };
+    }
+
 
     const sessionStartTime = getSessionStartTime();
 
@@ -749,8 +849,14 @@
           renderQuestion();
         }
       } else {
-        alert("Falsche Antwort in Raum A. Du kehrst in die Lobby zurück.");
-        loseLifeAndReturn();
+        showMessage(
+          "Falsche Antwort",
+          "Du hast die falsche Antwort gewählt.\nDu kehrst in die Lobby zurück.",
+          "Weiter",
+          () => {
+            loseLifeAndReturn();
+          }
+        );
       }
     }
 
@@ -766,10 +872,15 @@
     const sectionLabel = document.getElementById("sectionLabel");
     const answerButtonsB = Array.from(document.querySelectorAll(".panel-b .answer-btn"));
 
-    function openDoorB() {
+        function openDoorB() {
       doorB.classList.add("open");
       doorStatus.textContent = "offen";
-      alert("Raum A geschafft! Tür B ist jetzt geöffnet.");
+
+      showMessage(
+        "Raum A geschafft",
+        "Du hast alle Fragen richtig beantwortet.\nTür B ist jetzt geöffnet.",
+        "Okay"
+      );
 
       doorBButton.addEventListener("click", () => {
         if (panelA) panelA.style.display = "none";
@@ -831,7 +942,7 @@
       playSequenceB();
     }
 
-    function handleBClick(event) {
+       function handleBClick(event) {
       if (!acceptingInputB) return;
 
       const value = parseInt(event.currentTarget.getAttribute("data-b"), 10);
@@ -840,17 +951,43 @@
       if (value === expected) {
         playerIndexB++;
         if (playerIndexB >= sequenceB.length) {
-          alert("Stark! Du hast die komplette Sequenz richtig wiederholt. Raum 1 ist geschafft.");
-          completeRoom1();
+          showMessage(
+            "Sehr gut!",
+            "Du hast die komplette Sequenz richtig wiederholt.\nRaum 1 ist geschafft.",
+            "Zur Lobby",
+            () => {
+              completeRoom1();
+            }
+          );
         }
       } else {
-        alert("Falsche Reihenfolge in Raum B. Du kehrst in die Lobby zurück.");
-        loseLifeAndReturn();
+        showMessage(
+          "Falsche Reihenfolge",
+          "Du hast die Reihenfolge in Raum B falsch wiederholt.\nDu kehrst in die Lobby zurück.",
+          "Weiter",
+          () => {
+            loseLifeAndReturn();
+          }
+        );
       }
     }
 
+
     answerButtonsB.forEach(btn => btn.addEventListener("click", handleBClick));
   </script>
+    <!-- Ingame-Dialog / Message-Overlay -->
+  <div id="messageOverlay">
+    <div class="message-panel">
+      <div class="message-title" id="messageTitle">Titel</div>
+      <div class="message-text" id="messageText">
+        Nachrichtentext
+      </div>
+      <div class="message-buttons">
+        <button id="messageButton">OK</button>
+      </div>
+    </div>
+  </div>
+
   <div id="deathOverlay">
     <div class="death-panel death-left"></div>
     <div class="death-panel death-right"></div>
