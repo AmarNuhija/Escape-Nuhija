@@ -542,7 +542,7 @@
 
         <div class="grid">
           <div class="slot" onclick="startLevel(1)">Raum 1 - Das Vorwissen</div>
-          <div class="slot" onclick="startLevel(2)">Raum 2</div>
+          <div class="slot" onclick="startLevel(2)">Raum 2 - Die Reihenfolge</div>
           <div class="slot" onclick="startLevel(3)">Raum 3</div>
           <div class="slot locked">Locked</div>
           <div class="slot locked">Locked</div>
@@ -635,6 +635,8 @@
    function startLevel(n) {
   if (n === 1) {
     window.location.href = "room1.html";
+  } else if (n === 2) {
+    window.location.href = "room2.html";
   } else {
     showMessage(
       "Noch in Arbeit",
@@ -684,6 +686,13 @@ if (lives <= 0) {
       markSuccess(1);
     } else if (room1State === "failed") {
       markFailed(1);
+    }
+
+    const room2state = localStorage.getItem("escape_room2_state");
+    if (room2state === "success") {
+      markSuccess(2);
+    } else if (room2state === "failed") {
+      markFailed(2);
     }
 
     const SESSION_TIME_KEY = "escape_session_start";

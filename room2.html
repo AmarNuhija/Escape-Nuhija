@@ -1,0 +1,933 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <title>Raum 2 – Die perfekte Reihenfolge</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: #050505;
+      color: #f5f5f5;
+      font-family: Copperplate, Papyrus, fantasy;
+      min-height: 100vh;
+      overflow: hidden;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+      background-size: 60px 60px;
+      opacity: 0.25;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .hud {
+      position: fixed;
+      top: 24px;
+      left: 40px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      font-family: Copperplate, Papyrus, fantasy;
+      z-index: 2;
+    }
+
+    .hud-top {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .hud-avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      border: 2px solid #f5f5f5;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-weight: 700;
+      font-size: 1rem;
+      background: radial-gradient(circle at 30% 20%, #e91e63, #5a0b24);
+      box-shadow: 0 0 8px rgba(0,0,0,0.6);
+    }
+
+    .hud-lives {
+      font-size: 1.1rem;
+      text-shadow: 0 0 4px rgba(0,0,0,0.8);
+    }
+
+    .hud-lives span {
+      font-weight: 700;
+    }
+
+    .hud-timer {
+      font-size: 0.85rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #c3c3c3;
+      text-shadow: 0 0 4px rgba(0,0,0,0.7);
+    }
+
+    .room-wrapper {
+      position: relative;
+      z-index: 1;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .room-frame {
+      width: 80%;
+      max-width: 1500px;
+      height: 65vh;
+      border: 2px solid #f5f5f5;
+      position: relative;
+      padding: 30px 40px;
+    }
+
+    .room-title {
+      position: absolute;
+      top: 14px;
+      left: 16px;
+      font-size: 1rem;
+    }
+
+    .section-main-title {
+      position: absolute;
+      top: 35px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 2rem;
+    }
+
+    .sub-heading {
+      position: absolute;
+      top: 72px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 0.95rem;
+      opacity: 0.8;
+      text-align: center;
+    }
+
+    .progress-dots {
+      position: absolute;
+      top: 18px;
+      right: 24px;
+      display: flex;
+      gap: 8px;
+    }
+
+    .dot {
+      width: 13px;
+      height: 13px;
+      border-radius: 50%;
+      border: 2px solid #f5f5f5;
+      background: transparent;
+    }
+
+    .dot.active {
+      background: #f5f5f5;
+    }
+
+    .actor-row {
+      position: absolute;
+      top: 140px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 90%;
+      max-width: 1000px;
+      display: flex;
+      justify-content: space-between;
+      gap: 24px;
+    }
+
+    .actor-card {
+      width: 140px;
+      height: 220px;
+      border-radius: 14px;
+      border: 2px solid #f5f5f5;
+      background: #111;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-end;
+      padding: 12px 8px 10px;
+      cursor: grab;
+      user-select: none;
+      transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.2s ease, border-color 0.2s ease;
+    }
+
+    .actor-card.dragging {
+      opacity: 0.8;
+      transform: translateY(-4px) scale(1.03);
+      box-shadow: 0 0 14px rgba(255,255,255,0.16);
+      cursor: grabbing;
+    }
+
+    .actor-card.drop-target {
+      border-color: #00ff99;
+      box-shadow: 0 0 10px rgba(0,255,153,0.4);
+    }
+
+    .actor-figure {
+      position: relative;
+      width: 60px;
+      height: 120px;
+      margin-bottom: 10px;
+    }
+
+    /* Kopf */
+    .actor-head {
+      position: absolute;
+      left: 50%;
+      top: 4px;
+      transform: translateX(-50%);
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      border: 2px solid #f5f5f5;
+    }
+
+    /* Körper */
+    .actor-body {
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      top: 32px;
+      width: 2px;
+      background: #f5f5f5;
+    }
+
+    /* Arme */
+    .actor-arm {
+      position: absolute;
+      top: 46px;
+      width: 32px;
+      height: 2px;
+      background: #f5f5f5;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+
+    /* Beine */
+    .actor-leg {
+      position: absolute;
+      top: 0;
+      width: 2px;
+      background: #f5f5f5;
+      transform-origin: top center;
+    }
+
+    .actor-leg-left {
+      left: 50%;
+      transform: translateX(-50%) rotate(28deg);
+    }
+
+    .actor-leg-right {
+      left: 50%;
+      transform: translateX(-50%) rotate(-28deg);
+    }
+
+    /* Bart */
+    .actor-beard {
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      top: 30px;
+      width: 0;
+      height: 0;
+      border-left: 8px solid transparent;
+      border-right: 8px solid transparent;
+      border-top: 0 solid transparent;      /* wird per JS gesetzt */
+      border-bottom-style: solid;
+      border-bottom-color: #f5f5f5;
+    }
+
+    /* Schwert an rechter Hand */
+    .actor-sword {
+      position: absolute;
+      right: -4px;
+      top: 40px;
+      width: 40px;  /* wird per JS skaliert */
+      height: 3px;
+      background: #f5f5f5;
+      transform-origin: left center;
+    }
+
+    /* Stiefel */
+    .actor-boot {
+      position: absolute;
+      bottom: 6px;
+      width: 16px;
+      height: 10px;  /* wird per JS skaliert */
+      background: #f5f5f5;
+    }
+
+    .boot-left {
+      left: 18px;
+    }
+
+    .boot-right {
+      right: 18px;
+    }
+
+    /* Krawatte */
+    .actor-tie {
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      top: 46px;
+      width: 6px;
+      height: 16px; /* wird per JS skaliert */
+      background: #f5f5f5;
+      border-radius: 3px;
+    }
+
+    .actor-name {
+      font-size: 0.8rem;
+      margin-top: 4px;
+      opacity: 0.9;
+    }
+
+    .hint {
+      position: absolute;
+      bottom: 26px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 0.95rem;
+      opacity: 0.85;
+      text-align: center;
+      max-width: 70%;
+      line-height: 1.4;
+    }
+
+    .controls {
+      position: absolute;
+      bottom: 26px;
+      right: 32px;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .btn {
+      padding: 8px 16px;
+      border-radius: 999px;
+      border: 1px solid #f5f5f5;
+      background: #181818;
+      color: #f5f5f5;
+      cursor: pointer;
+      font-size: 0.9rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      transition: background 0.2s ease,
+                  transform 0.1s ease,
+                  box-shadow 0.2s ease;
+      font-family: Copperplate, Papyrus, fantasy;
+    }
+
+    .btn:hover {
+      background: #262626;
+      transform: translateY(-1px);
+      box-shadow: 0 0 10px rgba(255,255,255,0.15);
+    }
+
+    /* ===== Death-Overlay (Game-Over-Animation) ===== */
+    #deathOverlay {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 999;
+      display: none;
+    }
+
+    #deathOverlay.active {
+      display: block;
+    }
+
+    .death-panel {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 0;
+      background: #000;
+    }
+
+    .death-left {
+      left: 0;
+    }
+
+    .death-right {
+      right: 0;
+    }
+
+    #deathOverlay.active .death-left {
+      animation: deathCloseLeft 1.2s forwards;
+    }
+
+    #deathOverlay.active .death-right {
+      animation: deathCloseRight 1.2s forwards;
+    }
+
+    @keyframes deathCloseLeft {
+      0%   { width: 0; }
+      100% { width: 50vw; }
+    }
+
+    @keyframes deathCloseRight {
+      0%   { width: 0; }
+      100% { width: 50vw; }
+    }
+
+    /* ===== Ingame-Dialog / Message-Overlay ===== */
+    #messageOverlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.8);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 900;
+    }
+
+    #messageOverlay.active {
+      display: flex;
+    }
+
+    .message-panel {
+      width: 90%;
+      max-width: 480px;
+      padding: 24px 26px 20px;
+      border-radius: 14px;
+      border: 1px solid #444;
+      background: radial-gradient(circle at top, #171717, #050505);
+      box-shadow: 0 0 26px rgba(0,0,0,0.9);
+      text-align: center;
+      font-family: Copperplate, Papyrus, fantasy;
+    }
+
+    .message-title {
+      font-size: 1.4rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 10px;
+    }
+
+    .message-text {
+      font-size: 0.98rem;
+      opacity: 0.9;
+      margin-bottom: 18px;
+      line-height: 1.4;
+    }
+
+    .message-buttons {
+      display: flex;
+      justify-content: center;
+      margin-top: 8px;
+    }
+
+    #messageButton {
+      padding: 8px 22px;
+      border-radius: 999px;
+      border: 1px solid #f5f5f5;
+      background: #181818;
+      color: #f5f5f5;
+      cursor: pointer;
+      font-size: 0.9rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      transition: background 0.2s ease,
+                  transform 0.1s ease,
+                  box-shadow 0.2s ease;
+      font-family: Copperplate, Papyrus, fantasy;
+    }
+
+    #messageButton:hover {
+      background: #262626;
+      transform: translateY(-1px);
+      box-shadow: 0 0 12px rgba(255,255,255,0.15);
+    }
+  </style>
+</head>
+<body>
+  <div class="hud">
+    <div class="hud-top">
+      <div class="hud-avatar" id="hudInitial">P</div>
+      <div class="hud-lives">
+        <span id="hudLives">x05</span>
+      </div>
+    </div>
+    <div class="hud-timer">
+      ZEIT IM RAUM: <span id="hudTimer">00:00:00</span>
+    </div>
+  </div>
+
+  <div class="room-wrapper">
+    <div class="room-frame">
+      <div class="room-title">Raum 2</div>
+      <div class="section-main-title">Die perfekte Reihenfolge</div>
+      <div class="sub-heading">
+        Ziehe die fünf Figuren in die richtige Reihenfolge.<br>
+        In jeder Runde zählt ein anderes, verborgenes Kriterium
+        (z.B. Größe, Bart, Schwert, Stiefel, Krawatte).
+      </div>
+
+      <div class="progress-dots" id="progressDots">
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+      </div>
+
+      <div class="actor-row" id="actorRow">
+        <!-- Figuren werden per JS erzeugt -->
+      </div>
+
+      <div class="hint">
+        Ordne von links nach rechts so,
+        dass das geheime Merkmal immer länger / größer wird
+        – und bestätige dann deine Reihenfolge.
+      </div>
+
+      <div class="controls">
+        <button class="btn" id="btnCheck">Reihenfolge prüfen</button>
+        <button class="btn" id="btnBack">Zur Lobby</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ===== HUD / Leben / Timer wie in Raum 1 =====
+    const hudInitial = document.getElementById("hudInitial");
+    const hudLivesEl = document.getElementById("hudLives");
+    const hudTimerEl = document.getElementById("hudTimer");
+
+    const storedName = (localStorage.getItem("escape_username") || "Player").trim();
+    let lives = parseInt(localStorage.getItem("escape_lives") || "5", 10);
+
+    if (lives <= 0) {
+      window.location.href = "gameover.html";
+    }
+
+    hudInitial.textContent = storedName.charAt(0).toUpperCase() || "P";
+
+    function updateLivesDisplay() {
+      const value = String(lives).padStart(2, "0");
+      hudLivesEl.textContent = "x" + value;
+    }
+    updateLivesDisplay();
+
+    const SESSION_TIME_KEY = "escape_session_start";
+
+    function getSessionStartTime() {
+      let stored = sessionStorage.getItem(SESSION_TIME_KEY);
+      let t = stored ? parseInt(stored, 10) : NaN;
+      if (isNaN(t)) {
+        t = Date.now();
+        sessionStorage.setItem(SESSION_TIME_KEY, String(t));
+      }
+      return t;
+    }
+
+    const sessionStartTime = getSessionStartTime();
+
+    function updateTimer() {
+      const diff = Date.now() - sessionStartTime;
+      const totalSeconds = Math.floor(diff / 1000);
+      const hours = Math.floor(totalSeconds / 3600);
+      const minutes = Math.floor((totalSeconds % 3600) / 60);
+      const seconds = totalSeconds % 60;
+      hudTimerEl.textContent =
+        String(hours).padStart(2, "0") + ":" +
+        String(minutes).padStart(2, "0") + ":" +
+        String(seconds).padStart(2, "0");
+    }
+    updateTimer();
+    setInterval(updateTimer, 1000);
+
+    // ===== Ingame-Dialog-Funktion =====
+    function showMessage(title, text, buttonLabel, onClose) {
+      const overlay   = document.getElementById("messageOverlay");
+      const titleEl   = document.getElementById("messageTitle");
+      const textEl    = document.getElementById("messageText");
+      const buttonEl  = document.getElementById("messageButton");
+
+      if (!overlay || !titleEl || !textEl || !buttonEl) {
+        if (typeof onClose === "function") onClose();
+        return;
+      }
+
+      titleEl.textContent = title || "";
+      textEl.textContent  = text || "";
+      buttonEl.textContent = buttonLabel || "OK";
+
+      overlay.classList.add("active");
+
+      buttonEl.onclick = () => {
+        overlay.classList.remove("active");
+        buttonEl.onclick = null;
+        if (typeof onClose === "function") {
+          onClose();
+        }
+      };
+    }
+
+    // ===== Game Over / Leben verlieren =====
+    function playDeathAnimationAndGoToGameOver() {
+      const overlay = document.getElementById("deathOverlay");
+
+      if (!overlay) {
+        window.location.href = "gameover.html";
+        return;
+      }
+
+      overlay.classList.add("active");
+
+      setTimeout(() => {
+        window.location.href = "gameover.html";
+      }, 1300);
+    }
+
+    function loseLifeAndReturn() {
+      lives = Math.max(lives - 1, 0);
+      localStorage.setItem("escape_lives", String(lives));
+      localStorage.setItem("escape_room2_state", "failed");
+
+      if (lives <= 0) {
+        playDeathAnimationAndGoToGameOver();
+      } else {
+        window.location.href = "screen3.html";
+      }
+    }
+
+    function completeRoom2() {
+      localStorage.setItem("escape_room2_state", "success");
+      showMessage(
+        "Raum 2 geschafft",
+        "Du hast alle fünf Kriterien richtig sortiert.\nDu kehrst in die Lobby zurück.",
+        "Weiter",
+        () => {
+          window.location.href = "screen3.html";
+        }
+      );
+    }
+
+    // ===== Datenmodell der Figuren =====
+    // 5 Figuren A–E, jede Eigenschaft bekommt die Werte 1..5
+    const actorIds = ["A", "B", "C", "D", "E"];
+
+    // Reihenfolgen (von klein/kurz nach groß/lang)
+    const heightOrder = ["D", "B", "E", "C", "A"]; // Körpergröße
+    const beardOrder  = ["A", "C", "D", "E", "B"]; // Bart
+    const swordOrder  = ["B", "D", "A", "E", "C"]; // Schwert
+    const bootOrder   = ["C", "E", "B", "A", "D"]; // Stiefel
+    const tieOrder    = ["E", "A", "C", "B", "D"]; // Krawatte
+
+    // Aktoren-Objekte mit numerischen Werten 1..5 pro Eigenschaft
+    const ACTORS = {};
+    actorIds.forEach(id => {
+      ACTORS[id] = { id };
+    });
+
+    function assignRanks(orderArray, propName) {
+      orderArray.forEach((id, index) => {
+        ACTORS[id][propName] = index + 1; // 1..5
+      });
+    }
+
+    assignRanks(heightOrder, "height");
+    assignRanks(beardOrder,  "beard");
+    assignRanks(swordOrder,  "sword");
+    assignRanks(bootOrder,   "boots");
+    assignRanks(tieOrder,    "tie");
+
+    // Runden – welche Eigenschaft wird geprüft?
+    const rounds = [
+      { key: "height" },
+      { key: "beard" },
+      { key: "sword" },
+      { key: "boots" },
+      { key: "tie" }
+    ];
+
+    let currentRound = 0;
+
+    // ===== Figuren-Rendering =====
+    const actorRow = document.getElementById("actorRow");
+
+    function createActorCard(actorId) {
+      const actor = ACTORS[actorId];
+
+      const card = document.createElement("div");
+      card.className = "actor-card";
+      card.setAttribute("data-id", actor.id);
+      card.draggable = true;
+
+      const figure = document.createElement("div");
+      figure.className = "actor-figure";
+
+      const head = document.createElement("div");
+      head.className = "actor-head";
+
+      const body = document.createElement("div");
+      body.className = "actor-body";
+
+      const arm = document.createElement("div");
+      arm.className = "actor-arm";
+
+      const legLeft = document.createElement("div");
+      legLeft.className = "actor-leg actor-leg-left";
+
+      const legRight = document.createElement("div");
+      legRight.className = "actor-leg actor-leg-right";
+
+      const beard = document.createElement("div");
+      beard.className = "actor-beard";
+
+      const sword = document.createElement("div");
+      sword.className = "actor-sword";
+
+      const bootLeft = document.createElement("div");
+      bootLeft.className = "actor-boot boot-left";
+
+      const bootRight = document.createElement("div");
+      bootRight.className = "actor-boot boot-right";
+
+      const tie = document.createElement("div");
+      tie.className = "actor-tie";
+
+      figure.appendChild(head);
+      figure.appendChild(body);
+      figure.appendChild(arm);
+      figure.appendChild(legLeft);
+      figure.appendChild(legRight);
+      figure.appendChild(beard);
+      figure.appendChild(sword);
+      figure.appendChild(bootLeft);
+      figure.appendChild(bootRight);
+      figure.appendChild(tie);
+
+      const name = document.createElement("div");
+      name.className = "actor-name";
+      name.textContent = "Actor";
+
+      card.appendChild(figure);
+      card.appendChild(name);
+
+      return card;
+    }
+
+    function applyVisualsForActor(card) {
+      const id = card.getAttribute("data-id");
+      const actor = ACTORS[id];
+      const figure = card.querySelector(".actor-figure");
+
+      const body   = figure.querySelector(".actor-body");
+      const legL   = figure.querySelector(".actor-leg-left");
+      const legR   = figure.querySelector(".actor-leg-right");
+      const beard  = figure.querySelector(".actor-beard");
+      const sword  = figure.querySelector(".actor-sword");
+      const bootL  = figure.querySelector(".boot-left");
+      const bootR  = figure.querySelector(".boot-right");
+      const tie    = figure.querySelector(".actor-tie");
+
+      // Körpergröße: Körper + Bein-Länge ändern
+      const hRank = actor.height; // 1..5
+      const bodyHeight = 36 + (hRank - 3) * 6; // ca. 24..48
+      const legLength  = 34 + (hRank - 3) * 4; // ca. 22..46
+
+      body.style.height = bodyHeight + "px";
+
+      legL.style.height = legLength + "px";
+      legR.style.height = legLength + "px";
+
+      // Bartlänge
+const bRank = actor.beard;
+const beardLength = 6 + bRank * 6; // vorher 4 + bRank * 4
+beard.style.borderBottomWidth = beardLength + "px";
+
+// Schwertlänge
+const sRank = actor.sword;
+const swordLength = 32 + sRank * 10; // vorher 26 + sRank * 8
+sword.style.width = swordLength + "px";
+
+// Stiefelhöhe
+const bootsRank = actor.boots;
+const bootHeight = 10 + bootsRank * 5; // vorher 6 + bootsRank * 4
+bootL.style.height = bootHeight + "px";
+bootR.style.height = bootHeight + "px";
+
+// Krawattenlänge
+const tRank = actor.tie;
+const tieHeight = 16 + tRank * 5; // vorher 12 + tRank * 4
+tie.style.height = tieHeight + "px";
+
+    }
+
+    function shuffle(array) {
+      for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+      }
+      return array;
+    }
+
+   function renderRound() {
+  const dots = Array.from(document.querySelectorAll("#progressDots .dot"));
+  dots.forEach((d, i) => {
+    // Nur schon ABGESCHLOSSENE Runden markieren
+    d.classList.toggle("active", i < currentRound);
+  });
+
+  actorRow.innerHTML = "";
+  const shuffled = shuffle(actorIds.slice());
+  shuffled.forEach(id => {
+    const card = createActorCard(id);
+    actorRow.appendChild(card);
+    applyVisualsForActor(card);
+  });
+
+  initDragAndDrop();
+}
+
+
+    // ===== Drag & Drop =====
+    let draggedCard = null;
+
+    function initDragAndDrop() {
+      const cards = actorRow.querySelectorAll(".actor-card");
+
+      cards.forEach(card => {
+        card.addEventListener("dragstart", (e) => {
+          draggedCard = card;
+          card.classList.add("dragging");
+          e.dataTransfer.effectAllowed = "move";
+        });
+
+        card.addEventListener("dragend", () => {
+          draggedCard = null;
+          card.classList.remove("dragging");
+          cards.forEach(c => c.classList.remove("drop-target"));
+        });
+
+        card.addEventListener("dragover", (e) => {
+          e.preventDefault();
+          if (!draggedCard || draggedCard === card) return;
+          card.classList.add("drop-target");
+        });
+
+        card.addEventListener("dragleave", () => {
+          card.classList.remove("drop-target");
+        });
+
+        card.addEventListener("drop", (e) => {
+          e.preventDefault();
+          card.classList.remove("drop-target");
+          if (!draggedCard || draggedCard === card) return;
+
+          const children = Array.from(actorRow.children);
+          const draggedIndex = children.indexOf(draggedCard);
+          const targetIndex = children.indexOf(card);
+
+          if (draggedIndex < targetIndex) {
+            actorRow.insertBefore(draggedCard, card.nextSibling);
+          } else {
+            actorRow.insertBefore(draggedCard, card);
+          }
+        });
+      });
+    }
+
+    // ===== Runden-Logik / Prüfung =====
+    function getCurrentOrderIds() {
+      return Array.from(actorRow.children).map(card => card.getAttribute("data-id"));
+    }
+
+    function getCorrectOrderForRound(roundIndex) {
+      const round = rounds[roundIndex];
+      const key = round.key;
+
+      // nach Eigenschaft sortieren (1..5)
+      const idsCopy = actorIds.slice();
+      idsCopy.sort((a, b) => {
+        return ACTORS[a][key] - ACTORS[b][key];
+      });
+      return idsCopy;
+    }
+
+    function checkOrder() {
+      const current = getCurrentOrderIds();
+      const correct = getCorrectOrderForRound(currentRound);
+
+      const isCorrect = current.length === correct.length &&
+        current.every((id, idx) => id === correct[idx]);
+
+     if (isCorrect) {
+  if (currentRound >= rounds.length - 1) {
+    completeRoom2();
+  } else {
+    currentRound++;        // Runde ist geschafft
+    renderRound();         // DANN neu zeichnen -> jetzt wird genau 1 Punkt mehr aktiv
+    showMessage(
+      "Gut gemacht",
+      "Die Reihenfolge für dieses Kriterium stimmt.\nEin Punkt ist geschafft – weiter zum nächsten.",
+      "Weiter"
+    );
+  }
+}
+ else {
+        showMessage(
+          "Falsche Reihenfolge",
+          "Die Figuren sind nicht korrekt sortiert.\nDu verlierst ein Leben und kehrst in die Lobby zurück.",
+          "Weiter",
+          () => {
+            loseLifeAndReturn();
+          }
+        );
+      }
+    }
+
+    // Buttons
+    document.getElementById("btnCheck").addEventListener("click", checkOrder);
+    document.getElementById("btnBack").addEventListener("click", () => {
+      window.location.href = "screen3.html";
+    });
+
+    // Start
+    renderRound();
+  </script>
+
+  <!-- Ingame-Dialog / Message-Overlay -->
+  <div id="messageOverlay">
+    <div class="message-panel">
+      <div class="message-title" id="messageTitle">Titel</div>
+      <div class="message-text" id="messageText">
+        Nachrichtentext
+      </div>
+      <div class="message-buttons">
+        <button id="messageButton">OK</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Death-Animation -->
+  <div id="deathOverlay">
+    <div class="death-panel death-left"></div>
+    <div class="death-panel death-right"></div>
+  </div>
+</body>
+</html>
