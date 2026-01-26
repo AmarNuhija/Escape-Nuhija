@@ -1,0 +1,1288 @@
+<!DOCTYPE html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Raum 1 – Allgemeinwissen</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        background: #373a40;
+        color: #f5f5f5;
+        font-family: Copperplate, Papyrus, fantasy;
+        min-height: 100vh;
+        overflow: hidden;
+      }
+
+      body::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        background-image: linear-gradient(
+            rgba(255, 255, 255, 0.03) 1px,
+            transparent 1px
+          ),
+          linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+        background-size: 60px 60px;
+        opacity: 0.25;
+        pointer-events: none;
+        z-index: 0;
+      }
+
+      .hud {
+        position: fixed;
+        top: 24px;
+        left: 40px;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        z-index: 2;
+      }
+
+      .hud-top {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .hud-avatar {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        border: 2px solid #f5f5f5;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-weight: 700;
+        font-size: 1rem;
+        background: radial-gradient(circle at 30% 20%, #e91e63, #5a0b24);
+        box-shadow: 0 0 8px rgba(0, 0, 0, 0.6);
+      }
+
+      .hud-lives {
+        font-size: 1.1rem;
+        text-shadow: 0 0 4px rgba(0, 0, 0, 0.8);
+      }
+
+      .hud-lives span {
+        font-weight: 700;
+      }
+
+      .hud-timer {
+        font-size: 0.85rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: #c3c3c3;
+        text-shadow: 0 0 4px rgba(0, 0, 0, 0.7);
+      }
+
+      .room-wrapper {
+        position: relative;
+        z-index: 1;
+        min-height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+
+      .room-frame {
+        width: 70%;
+        max-width: 1500px;
+        height: 80vh;
+        border: 2px solid #f5f5f5;
+        position: relative;
+        padding: 30px 40px;
+      }
+
+      .room-title {
+        position: absolute;
+        top: 14px;
+        left: 16px;
+        font-size: 1rem;
+      }
+
+      .section-label {
+        position: absolute;
+        top: 18px;
+        left: 50%;
+        transform: translateX(-50%);
+        font-size: 0.9rem;
+        letter-spacing: 0.15em;
+      }
+
+      .section-main-title {
+        position: absolute;
+        top: 45px;
+        left: 50%;
+        transform: translateX(-50%);
+        font-size: 2rem;
+      }
+
+      /* Panel A */
+      .panel-a {
+        position: absolute;
+        top: 130px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 70%;
+        max-width: 950px;
+        border-radius: 22px;
+        border: 2px solid #f5f5f5;
+        padding: 26px 40px 30px;
+        text-align: center;
+      }
+
+      .progress-dots {
+        display: flex;
+        gap: 10px;
+        justify-content: center;
+        margin-bottom: 18px;
+      }
+
+      .dot {
+        width: 13px;
+        height: 13px;
+        border-radius: 50%;
+        border: 2px solid #f5f5f5;
+        background: transparent;
+      }
+
+      .dot.active {
+        background: #f5f5f5;
+      }
+
+      .question-text {
+        margin-top: 8px;
+        font-size: 1.5rem;
+        min-height: 50px;
+      }
+
+      .answers {
+        display: flex;
+        justify-content: center;
+        gap: 26px;
+        margin-top: 40px;
+      }
+
+      .answer-btn {
+        width: 140px;
+        height: 190px;
+        border-radius: 16px;
+        border: 2px solid #f5f5f5;
+        background: transparent;
+        cursor: pointer;
+        font-size: 0.95rem;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        transition: background 0.2s ease, transform 0.1s ease,
+          box-shadow 0.2s ease;
+      }
+
+      .answer-text {
+        font-size: 1.5rem;
+        text-align: center;
+        padding: 0 10px;
+        color: #f5f5f5;
+        font-family: Copperplate, Papyrus, fantasy;
+      }
+
+      .answer-btn:hover {
+        background: #1b1b1b;
+        transform: translateY(-2px);
+        box-shadow: 0 0 10px rgba(255, 255, 255, 0.08);
+      }
+
+      .answer-hint {
+        margin-top: 32px;
+        font-size: 1.1rem;
+        opacity: 0.8;
+      }
+
+      /* Tür B rechts */
+      .door-b {
+        position: absolute;
+        right: 60px;
+        top: 50%;
+        transform: translateY(-50%);
+        text-align: center;
+        font-size: 0.9rem;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .door-b-triangle {
+        width: 0;
+        height: 0;
+        border-top: 25px solid transparent;
+        border-bottom: 25px solid transparent;
+        border-left: 40px solid #f5f5f5;
+        margin-top: 4px;
+      }
+
+      .door-b-status {
+        margin-top: 4px;
+        font-size: 1.1rem;
+      }
+
+      .door-b-btn {
+        margin-top: 8px;
+        padding: 6px 16px;
+        border-radius: 999px;
+        border: 1px solid #f5f5f5;
+        background: transparent;
+        color: #f5f5f5;
+        cursor: pointer;
+        font-size: 1rem;
+        display: none;
+        font-family: Copperplate, Papyrus, fantasy;
+      }
+
+      .door-b-btn:hover {
+        background: #1b1b1b;
+      }
+
+      .door-b.open .door-b-triangle {
+        border-left-color: #00ff99;
+      }
+
+      .door-b.open .door-b-status {
+        color: #00ff99;
+      }
+
+      .door-b.open .door-b-btn {
+        display: inline-block;
+      }
+
+      /* Panel B */
+      .panel-b {
+        position: absolute;
+        top: 130px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 70%;
+        max-width: 950px;
+        border-radius: 22px;
+        border: 2px solid #f5f5f5;
+        padding: 26px 40px 30px;
+        text-align: center;
+        display: none;
+      }
+
+      .panel-b-title {
+        font-size: 1.5rem;
+        margin-bottom: 18px;
+      }
+
+      .sequence-text {
+        font-size: 1.3rem;
+        margin-bottom: 18px;
+      }
+
+      .panel-b .answer-btn.highlight {
+        background: #00ff99;
+        color: #000;
+        box-shadow: 0 0 18px rgba(0, 255, 153, 0.7);
+      }
+
+      .answer-number {
+        font-size: 2.2rem;
+        font-family: Copperplate, Papyrus, fantasy;
+        color: #f5f5f5;
+      }
+
+      /* ===== Death-Overlay ===== */
+      #deathOverlay {
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        z-index: 999;
+        display: none;
+      }
+
+      #deathOverlay.active {
+        display: block;
+      }
+
+      .death-panel {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        width: 0;
+        background: #000;
+      }
+
+      .death-left {
+        left: 0;
+      }
+
+      .death-right {
+        right: 0;
+      }
+
+      #deathOverlay.active .death-left {
+        animation: deathCloseLeft 1.2s forwards;
+      }
+
+      #deathOverlay.active .death-right {
+        animation: deathCloseRight 1.2s forwards;
+      }
+
+      @keyframes deathCloseLeft {
+        0% {
+          width: 0;
+        }
+        100% {
+          width: 50vw;
+        }
+      }
+
+      @keyframes deathCloseRight {
+        0% {
+          width: 0;
+        }
+        100% {
+          width: 50vw;
+        }
+      }
+
+      /* Audio-Elemente unsichtbar */
+      #bgMusic,
+      #uiClick,
+      #uiHover {
+        display: none;
+      }
+
+      /* ===== In-Game Modal statt alert() ===== */
+      .modal {
+        position: fixed;
+        inset: 0;
+        display: none;
+        place-items: center;
+        background: rgba(0, 0, 0, 0.6);
+        z-index: 2000;
+        pointer-events: none;
+      }
+
+      .modal.show {
+        display: grid;
+        pointer-events: auto;
+      }
+
+      .modal-box {
+        width: min(520px, 92vw);
+        border: 2px solid #f5f5f5;
+        border-radius: 18px;
+        padding: 22px 22px 16px;
+        background: #070707;
+        box-shadow: 0 0 24px rgba(0, 0, 0, 0.7);
+        text-align: center;
+        pointer-events: auto;
+      }
+
+      .modal-text {
+        font-size: 1.1rem;
+        line-height: 1.4;
+        margin-bottom: 16px;
+      }
+
+      .modal-ok {
+        padding: 8px 18px;
+        border-radius: 999px;
+        border: 1px solid #f5f5f5;
+        background: transparent;
+        color: #f5f5f5;
+        cursor: pointer;
+        font-family: Copperplate, Papyrus, fantasy;
+      }
+
+      .modal-ok:hover {
+        background: #1b1b1b;
+      }
+
+      /* ===== Loading Overlay ===== */
+      #loadingOverlay {
+        position: fixed;
+        inset: 0;
+        z-index: 3000; /* über Modal */
+        background: #2d3c59;
+        display: grid;
+        place-items: center;
+      }
+
+      #loadingOverlay.hidden {
+        display: none;
+      }
+
+      .loading-box {
+        width: min(520px, 92vw);
+        border: 2px solid #f5f5f5;
+        border-radius: 18px;
+        padding: 22px;
+        background: #070707;
+        box-shadow: 0 0 24px rgba(0, 0, 0, 0.7);
+        text-align: center;
+      }
+
+      .loading-title {
+        font-size: 1.2rem;
+        margin-bottom: 14px;
+      }
+
+      .loading-bar {
+        width: 100%;
+        height: 14px;
+        border: 2px solid #f5f5f5;
+        border-radius: 999px;
+        overflow: hidden;
+        background: transparent;
+      }
+
+      .loading-fill {
+        height: 100%;
+        width: 0%;
+        background: #f5f5f5;
+        transition: width 0.35s ease;
+      }
+
+      .loading-percent {
+        margin-top: 14px;
+        font-size: 1.1rem;
+        letter-spacing: 0.08em;
+        color: #cfcfcf;
+      }
+
+      /* optional: sanft ausblenden */
+      #loadingOverlay.fadeout {
+        animation: loadingFadeOut 0.35s forwards;
+      }
+
+      @keyframes loadingFadeOut {
+        to {
+          opacity: 0;
+          visibility: hidden;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <!-- In-Game Modal -->
+    <div id="gameModal" class="modal">
+      <div class="modal-box">
+        <div id="modalText" class="modal-text"></div>
+        <button id="modalOk" class="modal-ok">OK</button>
+      </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay">
+      <div class="loading-box">
+        <div class="loading-title">Raum 1 wird geladen…</div>
+        <div class="loading-bar">
+          <div class="loading-fill" id="loadingFill"></div>
+        </div>
+        <div class="loading-percent" id="loadingPercent">0%</div>
+      </div>
+    </div>
+
+    <div class="hud">
+      <div class="hud-top">
+        <div class="hud-avatar" id="hudInitial">P</div>
+        <div class="hud-lives">
+          <span id="hudLives">x05</span>
+        </div>
+      </div>
+      <div class="hud-timer">
+        ZEIT IM RAUM: <span id="hudTimer">00:00:00</span>
+      </div>
+    </div>
+
+    <!-- ✅ Hintergrundmusik (8bit) + UI Sounds -->
+    <audio
+      id="bgMusic"
+      src="8bit-music-for-game-68698.mp3"
+      loop
+      preload="auto"
+    ></audio>
+    <audio id="uiClick" src="click.mp3" preload="auto"></audio>
+    <audio id="uiHover" src="hover.mp3" preload="auto"></audio>
+
+    <div class="room-wrapper">
+      <div class="room-frame">
+        <div class="room-title">Raum 1</div>
+        <div class="section-label" id="sectionLabel">A</div>
+        <div class="section-main-title">Allgemeinwissen</div>
+
+        <div class="panel-a" id="panelA">
+          <div class="progress-dots" id="progressDots">
+            <div class="dot"></div>
+            <div class="dot"></div>
+            <div class="dot"></div>
+            <div class="dot"></div>
+            <div class="dot"></div>
+          </div>
+
+          <div class="question-text" id="questionText"></div>
+
+          <div class="answers">
+            <button class="answer-btn" data-index="0">
+              <div class="answer-text" id="answerText0"></div>
+            </button>
+            <button class="answer-btn" data-index="1">
+              <div class="answer-text" id="answerText1"></div>
+            </button>
+            <button class="answer-btn" data-index="2">
+              <div class="answer-text" id="answerText2"></div>
+            </button>
+          </div>
+
+          <div class="answer-hint">Klicke auf die richtige Antwort.</div>
+        </div>
+
+        <div class="door-b" id="doorB">
+          <div>B</div>
+          <div class="door-b-triangle"></div>
+          <div class="door-b-status" id="doorStatus">geschlossen</div>
+          <button class="door-b-btn" id="doorBButton">Raum B betreten</button>
+        </div>
+
+        <div class="panel-b" id="panelB">
+          <div class="panel-b-title">Merkspiel</div>
+          <div class="sequence-text">
+            Merke dir die blinkende Reihenfolge der Karten.<br />
+          </div>
+          <button
+            class="door-b-btn"
+            id="startBBtn"
+            style="display: inline-block"
+            style="font-size: 1.5rem"
+          >
+            Sequenz starten
+          </button>
+
+          <div class="answers">
+            <button class="answer-btn" data-b="1">
+              <div class="answer-number">1</div>
+            </button>
+            <button class="answer-btn" data-b="2">
+              <div class="answer-number">2</div>
+            </button>
+            <button class="answer-btn" data-b="3">
+              <div class="answer-number">3</div>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // ===== In-Game Modal (ersetzt alert) =====
+      const gameModal = document.getElementById("gameModal");
+      const modalText = document.getElementById("modalText");
+      const modalOk = document.getElementById("modalOk");
+
+      // ===== Loading Logic (0 -> 44 -> 67 -> 99 in 4s) =====
+      const loadingOverlay = document.getElementById("loadingOverlay");
+      const loadingFill = document.getElementById("loadingFill");
+      const loadingPercent = document.getElementById("loadingPercent");
+
+      function setGameInteractionEnabled(enabled) {
+        // Alles im Raum sperren (Buttons etc.)
+        const allButtons = document.querySelectorAll("button");
+        allButtons.forEach((b) => (b.disabled = !enabled));
+
+        // Modal-OK trotzdem immer klickbar lassen
+        if (modalOk) modalOk.disabled = false;
+      }
+
+      function runRoomLoadingSequence() {
+        // Während Loading: keine Klicks
+        setGameInteractionEnabled(false);
+
+        // Startwerte
+        loadingFill.style.width = "0%";
+        loadingPercent.textContent = "0%";
+
+        // Sprünge über 4 Sekunden (du kannst die Zeiten ändern)
+        setTimeout(() => {
+          loadingFill.style.width = "44%";
+          loadingPercent.textContent = "44%";
+        }, 400);
+
+        setTimeout(() => {
+          loadingFill.style.width = "67%";
+          loadingPercent.textContent = "67%";
+        }, 1700);
+
+        setTimeout(() => {
+          loadingFill.style.width = "99%";
+          loadingPercent.textContent = "99%";
+        }, 3200);
+
+        // nach 4 Sekunden weg
+        setTimeout(() => {
+          loadingOverlay.classList.add("fadeout");
+          setTimeout(() => {
+            loadingOverlay.classList.add("hidden");
+            setGameInteractionEnabled(true);
+          }, 380);
+        }, 4000);
+      }
+
+      // Beim Laden starten
+      window.addEventListener("load", () => {
+        runRoomLoadingSequence();
+      });
+
+      function showModal(message, onClose) {
+        modalText.textContent = message;
+        gameModal.classList.add("show");
+
+        function close() {
+          gameModal.classList.remove("show");
+          modalOk.removeEventListener("click", close);
+          gameModal.removeEventListener("click", outsideClose);
+          document.removeEventListener("keydown", escClose);
+          if (typeof onClose === "function") onClose();
+        }
+
+        function outsideClose(e) {
+          if (e.target === gameModal) close();
+        }
+
+        function escClose(e) {
+          if (e.key === "Escape") close();
+        }
+
+        modalOk.addEventListener("click", close);
+        gameModal.addEventListener("click", outsideClose);
+        document.addEventListener("keydown", escClose);
+      }
+
+      // ===================== HUD =====================
+      const hudInitial = document.getElementById("hudInitial");
+      const hudLivesEl = document.getElementById("hudLives");
+      const hudTimerEl = document.getElementById("hudTimer");
+
+      const storedName = (
+        localStorage.getItem("escape_username") || "Player"
+      ).trim();
+      let lives = parseInt(localStorage.getItem("escape_lives") || "5", 10);
+
+      if (lives <= 0) {
+        sessionStorage.removeItem("escape_session_start"); // ✅ Timer reset
+        window.location.href = "gameover.html";
+      }
+
+      hudInitial.textContent = storedName.charAt(0).toUpperCase() || "P";
+
+      function updateLivesDisplay() {
+        const value = String(lives).padStart(2, "0");
+        hudLivesEl.textContent = "x" + value;
+      }
+      updateLivesDisplay();
+
+      // ===================== GLOBALER TIMER (sessionStorage) =====================
+      const SESSION_TIME_KEY = "escape_session_start";
+
+      function getSessionStartTime() {
+        let stored = sessionStorage.getItem(SESSION_TIME_KEY);
+        let t = stored ? parseInt(stored, 10) : NaN;
+        if (isNaN(t)) {
+          t = Date.now();
+          sessionStorage.setItem(SESSION_TIME_KEY, String(t));
+        }
+        return t;
+      }
+
+      const sessionStartTime = getSessionStartTime();
+
+      function updateTimer() {
+        const diff = Date.now() - sessionStartTime;
+        const totalSeconds = Math.floor(diff / 1000);
+        const hours = Math.floor(totalSeconds / 3600);
+        const minutes = Math.floor((totalSeconds % 3600) / 60);
+        const seconds = totalSeconds % 60;
+        hudTimerEl.textContent =
+          String(hours).padStart(2, "0") +
+          ":" +
+          String(minutes).padStart(2, "0") +
+          ":" +
+          String(seconds).padStart(2, "0");
+      }
+      updateTimer();
+      setInterval(updateTimer, 1000);
+
+      // ===================== AUDIO SETTINGS AUS localStorage =====================
+      const SETTINGS_KEY = "escape_settings";
+
+      function getSettings() {
+        const defaults = { master: 80, music: 100, effects: 80 };
+        const raw = localStorage.getItem(SETTINGS_KEY);
+        if (!raw) return defaults;
+
+        try {
+          const data = JSON.parse(raw);
+          return {
+            master:
+              typeof data.master === "number" ? data.master : defaults.master,
+            music: typeof data.music === "number" ? data.music : defaults.music,
+            effects:
+              typeof data.effects === "number"
+                ? data.effects
+                : defaults.effects,
+          };
+        } catch {
+          return defaults;
+        }
+      }
+
+      const bgMusic = document.getElementById("bgMusic");
+      const sndClick = document.getElementById("uiClick");
+      const sndHover = document.getElementById("uiHover");
+
+      function applyMusicVolumeFromSettings() {
+        if (!bgMusic) return;
+        const s = getSettings();
+        bgMusic.volume = Math.max(0, Math.min(1, s.music / 100));
+      }
+
+      function applyEffectVolumesFromSettings() {
+        const s = getSettings();
+        const master = Math.max(0, Math.min(1, s.master / 100));
+        const effects = Math.max(0, Math.min(1, s.effects / 100));
+        const vol = master * effects;
+
+        if (sndClick) sndClick.volume = vol;
+        if (sndHover) sndHover.volume = vol;
+      }
+
+      function fadeInMusic(durationMs = 2000) {
+        if (!bgMusic) return;
+
+        const s = getSettings();
+        const target = Math.max(0, Math.min(1, s.music / 100));
+
+        if (target <= 0) {
+          bgMusic.volume = 0;
+          return;
+        }
+
+        let current = 0;
+        bgMusic.volume = 0;
+
+        const steps = 30;
+        const stepTime = durationMs / steps;
+
+        const interval = setInterval(() => {
+          current += target / steps;
+          if (current >= target) {
+            current = target;
+            clearInterval(interval);
+          }
+          bgMusic.volume = current;
+        }, stepTime);
+      }
+
+      function startBgMusic() {
+        if (!bgMusic) return;
+
+        applyMusicVolumeFromSettings();
+        if (bgMusic.volume <= 0) {
+          bgMusic.pause();
+          bgMusic.currentTime = 0;
+          return;
+        }
+
+        bgMusic.loop = true;
+        bgMusic
+          .play()
+          .then(() => fadeInMusic(2500))
+          .catch(() => {
+            document.addEventListener("click", tryResumeMusic, { once: true });
+          });
+      }
+
+      function tryResumeMusic() {
+        if (!bgMusic) return;
+        applyMusicVolumeFromSettings();
+        if (bgMusic.volume <= 0) return;
+
+        bgMusic
+          .play()
+          .then(() => fadeInMusic(1200))
+          .catch(() => {});
+      }
+
+      function playClickSound() {
+        if (!sndClick) return;
+        applyEffectVolumesFromSettings();
+        sndClick.pause();
+        sndClick.currentTime = 0;
+        sndClick.play().catch(() => {});
+      }
+
+      function playHoverSound() {
+        if (!sndHover) return;
+        applyEffectVolumesFromSettings();
+        sndHover.pause();
+        sndHover.currentTime = 0;
+        sndHover.play().catch(() => {});
+      }
+
+      function bindUiSounds() {
+        const uiButtons = document.querySelectorAll("button, .answer-btn");
+        uiButtons.forEach((el) => {
+          el.addEventListener("click", playClickSound);
+          el.addEventListener("mouseenter", playHoverSound);
+        });
+      }
+
+      window.addEventListener("storage", (e) => {
+        if (e.key === SETTINGS_KEY) {
+          applyMusicVolumeFromSettings();
+          applyEffectVolumesFromSettings();
+        }
+      });
+
+      applyMusicVolumeFromSettings();
+      applyEffectVolumesFromSettings();
+      bindUiSounds();
+
+      window.addEventListener("load", () => {
+        startBgMusic();
+      });
+
+      // ===================== SPIELLOGIK (GAME OVER / SUCCESS) =====================
+      function playDeathAnimationAndGoToGameOver() {
+        const overlay = document.getElementById("deathOverlay");
+
+        // ✅ Timer reset IMMER beim Game Over
+        sessionStorage.removeItem("escape_session_start");
+
+        if (!overlay) {
+          window.location.href = "gameover.html";
+          return;
+        }
+
+        overlay.classList.add("active");
+        setTimeout(() => {
+          window.location.href = "gameover.html";
+        }, 1300);
+      }
+
+      function completeRoom1() {
+        localStorage.setItem("escape_room1_state", "success");
+        window.location.href = "screen3.html";
+      }
+
+      // ✅ EINZIGE Fail-Funktion: zeigt Modal GENAU EINMAL und entscheidet dann Lobby/GameOver
+      function loseLifeAndReturn(
+        reasonText = "Du kehrst in die Lobby zurück."
+      ) {
+        const nextLives = Math.max(lives - 1, 0);
+
+        const msg =
+          nextLives <= 0 ? "Letztes Leben verloren. Game Over." : reasonText;
+
+        showModal(msg, () => {
+          lives = nextLives;
+          localStorage.setItem("escape_lives", String(lives));
+          localStorage.setItem("escape_room1_state", "failed");
+          updateLivesDisplay();
+
+          if (lives <= 0) {
+            playDeathAnimationAndGoToGameOver();
+          } else {
+            window.location.href = "screen3.html";
+          }
+        });
+      }
+
+      // ========= FRAGENPOOL mit Rotation =========
+      const questionPool = [
+        {
+          q: "Wie viele Kontinente werden klassisch gezählt?",
+          answers: ["Fünf", "Sechs", "Sieben"],
+          correct: 2,
+        },
+        {
+          q: "Welcher Planet ist der Sonne am nächsten?",
+          answers: ["Venus", "Merkur", "Mars"],
+          correct: 1,
+        },
+        {
+          q: "Wie viele Minuten hat eine Stunde?",
+          answers: ["50", "60", "70"],
+          correct: 1,
+        },
+        {
+          q: "Welche Farbe hat die mittlere Ampel?",
+          answers: ["Rot", "Gelb", "Grün"],
+          correct: 1,
+        },
+        {
+          q: "In welcher Einheit wird elektrische Spannung gemessen?",
+          answers: ["Volt", "Watt", "Ampere"],
+          correct: 0,
+        },
+        {
+          q: "Wie viele Tage hat ein Schaltjahr?",
+          answers: ["365", "366", "367"],
+          correct: 1,
+        },
+        {
+          q: "Wie heißt die Hauptstadt von Italien?",
+          answers: ["Rom", "Mailand", "Neapel"],
+          correct: 0,
+        },
+        {
+          q: "Welches Tier ist ein Säugetier?",
+          answers: ["Hai", "Delfin", "Forelle"],
+          correct: 1,
+        },
+        {
+          q: "Welche Form hat ein Stoppschild?",
+          answers: ["Sechseck", "Achteck", "Fünfeck"],
+          correct: 1,
+        },
+        {
+          q: "Wie viele Seiten hat ein Quadrat?",
+          answers: ["Drei", "Vier", "Fünf"],
+          correct: 1,
+        },
+        {
+          q: "Welche Farbe hat Kupfer typischerweise?",
+          answers: ["Silber", "Gold", "Rötlich"],
+          correct: 2,
+        },
+        {
+          q: "Welcher dieser Berufe arbeitet im Krankenhaus?",
+          answers: ["Mechaniker", "Chirurg", "Bäcker"],
+          correct: 1,
+        },
+        {
+          q: "Was ist H2O?",
+          answers: ["Sauerstoff", "Wasser", "Kohlenstoffdioxid"],
+          correct: 1,
+        },
+        {
+          q: "Wie viele Sekunden hat eine Minute?",
+          answers: ["60", "80", "100"],
+          correct: 0,
+        },
+        {
+          q: "Welcher Kontinent ist am größten?",
+          answers: ["Afrika", "Asien", "Europa"],
+          correct: 1,
+        },
+        {
+          q: "Welche Sprache spricht man hauptsächlich in Brasilien?",
+          answers: ["Spanisch", "Portugiesisch", "Französisch"],
+          correct: 1,
+        },
+        {
+          q: "Wie viele Beine hat eine Spinne?",
+          answers: ["Sechs", "Acht", "Zehn"],
+          correct: 1,
+        },
+        {
+          q: "Welche Jahreszeit folgt auf den Sommer?",
+          answers: ["Herbst", "Winter", "Frühling"],
+          correct: 0,
+        },
+        {
+          q: "Welche Einheit benutzt man für Temperatur im Alltag (in Deutschland)?",
+          answers: ["Kelvin", "Fahrenheit", "Grad Celsius"],
+          correct: 2,
+        },
+        {
+          q: "Was ist größer?",
+          answers: ["1 Kilometer", "500 Meter", "100 Meter"],
+          correct: 0,
+        },
+        {
+          q: "Wie viele Farben hat ein Regenbogen?",
+          answers: ["Fünf", "Sechs", "Sieben"],
+          correct: 2,
+        },
+        {
+          q: "Welches Element hat das chemische Symbol O?",
+          answers: ["Gold", "Sauerstoff", "Silber"],
+          correct: 1,
+        },
+        {
+          q: "Wie viele Planeten hat unser Sonnensystem?",
+          answers: ["Acht", "Neun", "Zehn"],
+          correct: 0,
+        },
+        {
+          q: "Welcher Vogel kann nicht fliegen?",
+          answers: ["Pinguin", "Adler", "Spatz"],
+          correct: 0,
+        },
+        {
+          q: "Was ist die Hauptstadt von Frankreich?",
+          answers: ["Berlin", "Madrid", "Paris"],
+          correct: 2,
+        },
+        {
+          q: "Was ist der 13 Buchstabe im deutschen Alphabet?",
+          answers: ["L", "M", "N"],
+          correct: 1,
+        },
+        {
+          q: "Welches ist das größte Land Südamerikas?",
+          answers: ["Brasilien", "Argentinien", "Peru"],
+          correct: 0,
+        },
+        {
+          q: "Wie viele Zähne hat ein erwachsener Mensch normalerweise?",
+          answers: ["28", "30", "32"],
+          correct: 2,
+        },
+        {
+          q: "Welcher dieser Flüsse ist der längste der Welt?",
+          answers: ["Nil", "Amazonas", "Yangtze"],
+          correct: 1,
+        },
+        {
+          q: "In welchem Jahr landeten die ersten Menschen auf dem Mond?",
+          answers: ["1965", "1969", "1972"],
+          correct: 1,
+        },
+        {
+          q: "Welches Tier ist das größte lebende Landtier?",
+          answers: ["Giraffe", "Elefant", "Nashorn"],
+          correct: 1,
+        },
+        {
+          q: "In welchem Jahr fiel die Berliner Mauer?",
+          answers: ["1989", "1991", "1979"],
+          correct: 0,
+        },
+        {
+          q: "Welcher dieser Stoffe ist ein Metall?",
+          answers: ["Holz", "Eisen", "Kunststoff"],
+          correct: 1,
+        },
+      ];
+
+      const QUESTIONS_PER_RUN = 5;
+      const QUESTION_OFFSET_KEY = "escape_room1_question_offset";
+
+      let questionOffset = parseInt(
+        localStorage.getItem(QUESTION_OFFSET_KEY) || "0",
+        10
+      );
+      if (
+        isNaN(questionOffset) ||
+        questionOffset < 0 ||
+        questionOffset >= questionPool.length
+      ) {
+        questionOffset = 0;
+      }
+
+      const questions = [];
+      for (let i = 0; i < QUESTIONS_PER_RUN; i++) {
+        const idx = (questionOffset + i) % questionPool.length;
+        questions.push(questionPool[idx]);
+      }
+
+      const newOffset =
+        (questionOffset + QUESTIONS_PER_RUN) % questionPool.length;
+      localStorage.setItem(QUESTION_OFFSET_KEY, String(newOffset));
+
+      let currentQuestion = 0;
+
+      const questionTextEl = document.getElementById("questionText");
+      const answerText0 = document.getElementById("answerText0");
+      const answerText1 = document.getElementById("answerText1");
+      const answerText2 = document.getElementById("answerText2");
+      const dots = Array.from(document.querySelectorAll("#progressDots .dot"));
+      const answerButtonsA = Array.from(
+        document.querySelectorAll(".panel-a .answer-btn")
+      );
+
+      function renderQuestion() {
+        const q = questions[currentQuestion];
+        questionTextEl.textContent = q.q;
+        answerText0.textContent = q.answers[0];
+        answerText1.textContent = q.answers[1];
+        answerText2.textContent = q.answers[2];
+
+        dots.forEach((d, i) => {
+          d.classList.toggle("active", i <= currentQuestion);
+        });
+      }
+
+      function handleAnswerClick(event) {
+        const index = parseInt(
+          event.currentTarget.getAttribute("data-index"),
+          10
+        );
+        const q = questions[currentQuestion];
+
+        if (index === q.correct) {
+          currentQuestion++;
+          if (currentQuestion >= questions.length) {
+            openDoorB();
+          } else {
+            renderQuestion();
+          }
+        } else {
+          // ✅ NUR EINMAL Modal (über loseLifeAndReturn)
+          loseLifeAndReturn("Falsche Antwort. Du kehrst in die Lobby zurück.");
+        }
+      }
+
+      answerButtonsA.forEach((btn) =>
+        btn.addEventListener("click", handleAnswerClick)
+      );
+      renderQuestion();
+
+      // ===================== Raum B =====================
+      const doorB = document.getElementById("doorB");
+      const doorStatus = document.getElementById("doorStatus");
+      const doorBButton = document.getElementById("doorBButton");
+      const panelB = document.getElementById("panelB");
+      const panelA = document.getElementById("panelA");
+      const sectionLabel = document.getElementById("sectionLabel");
+      const answerButtonsB = Array.from(
+        document.querySelectorAll(".panel-b .answer-btn")
+      );
+      const startBBtn = document.getElementById("startBBtn");
+
+      function openDoorB() {
+        doorB.classList.add("open");
+        doorStatus.textContent = "offen";
+        showModal("Raum A geschafft! Tür B ist jetzt geöffnet.");
+
+        doorBButton.addEventListener(
+          "click",
+          () => {
+            if (panelA) panelA.style.display = "none";
+            panelB.style.display = "block";
+            doorB.style.display = "none";
+            if (sectionLabel) sectionLabel.textContent = "B";
+            prepareRoomB();
+          },
+          { once: true }
+        );
+      }
+
+      function setRoomButtonEnable(enabled) {
+        answerButtonsB.forEach((b) => (b.diabled = !enabled));
+      }
+
+      function prepareRoomB() {
+        setRoomButtonEnable(false);
+        acceptingInputB = false;
+
+        if (startBBtn) {
+          startBBtn.style.display = "inline-block";
+          startBBtn.disabled = false;
+          startBBtn.focus();
+        }
+      }
+
+      if (startBBtn) {
+        startBBtn.addEventListener("click", () => {
+          startBBtn.disabled = true;
+          startBBtn.style.display = "none";
+          startRoomB();
+        });
+      }
+
+      // ===== Raum B – Merkspiel =====
+      let sequenceB = [];
+      let playerIndexB = 0;
+      let acceptingInputB = false;
+
+      function generateSequenceB(length = 4) {
+        sequenceB = [];
+        for (let i = 0; i < length; i++) {
+          const value = Math.floor(Math.random() * 3) + 1;
+          sequenceB.push(value);
+        }
+      }
+
+      function playSequenceB() {
+        acceptingInputB = false;
+        playerIndexB = 0;
+        let i = 0;
+
+        function step() {
+          if (i >= sequenceB.length) {
+            acceptingInputB = true;
+            setRoomButtonEnable(true);
+            return;
+          }
+
+          const value = sequenceB[i];
+          const btn = document.querySelector(
+            '.panel-b .answer-btn[data-b="' + value + '"]'
+          );
+
+          if (btn) {
+            btn.classList.add("highlight");
+            setTimeout(() => {
+              btn.classList.remove("highlight");
+              i++;
+              setTimeout(step, 250);
+            }, 600);
+          } else {
+            i++;
+            setTimeout(step, 250);
+          }
+        }
+
+        step();
+      }
+
+      function startRoomB() {
+        setRoomButtonEnable(false);
+        generateSequenceB(4);
+        playSequenceB();
+      }
+
+      function handleBClick(event) {
+        if (!acceptingInputB) return;
+
+        const value = parseInt(event.currentTarget.getAttribute("data-b"), 10);
+        const expected = sequenceB[playerIndexB];
+
+        if (value === expected) {
+          playerIndexB++;
+          if (playerIndexB >= sequenceB.length) {
+            showModal("Stark! Raum 1 ist geschafft.", () => {
+              completeRoom1();
+            });
+          }
+        } else {
+          // ✅ NUR EINMAL Modal (über loseLifeAndReturn)
+          loseLifeAndReturn(
+            "Falsche Reihenfolge. Du kehrst in die Lobby zurück."
+          );
+        }
+      }
+
+      answerButtonsB.forEach((btn) =>
+        btn.addEventListener("click", handleBClick)
+      );
+    </script>
+
+    <div id="deathOverlay">
+      <div class="death-panel death-left"></div>
+      <div class="death-panel death-right"></div>
+    </div>
+  </body>
+</html>

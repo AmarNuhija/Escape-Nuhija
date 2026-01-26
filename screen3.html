@@ -1,0 +1,1068 @@
+<!DOCTYPE html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Lobby</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      :root {
+        --game-brightness: 1;
+        --game-contrast: 1;
+        --slot-hover-raise: -2px;
+        --game-sharpness: 0;
+      }
+
+      body {
+        background: #171718;
+        color: #f5f5f5;
+        font-family: Copperplate, Papyrus, fantasy;
+        min-height: 100vh;
+        overflow: hidden;
+      }
+
+    #gameRoot { min-height: 100vh; position: relative; }
+
+#filterLayer{
+  min-height: 100vh;
+  filter: brightness(var(--game-brightness)) contrast(var(--game-contrast));
+}
+
+#filterLayer.sharpenOn{
+  filter: brightness(var(--game-brightness))
+          contrast(var(--game-contrast))
+          url(#sharpenFilter);
+}
+
+
+
+
+
+      body::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        background-image: linear-gradient(
+            rgba(255, 255, 255, 0.03) 1px,
+            transparent 1px
+          ),
+          linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+        background-size: 60px 60px;
+        opacity: 0.25;
+        pointer-events: none;
+        z-index: 0;
+      }
+
+      .ambient {
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        z-index: 0;
+      }
+
+      .ambient-rect {
+        position: absolute;
+        width: 50px;
+        height: 50px;
+        border-radius: 1px;
+        border: 1px solid rgba(255, 255, 255, 0.04);
+        background: rgba(0, 0, 0, 0.4);
+        opacity: 0;
+        box-shadow: 0 0 0px rgba(0, 0, 0, 0.6);
+        animation: ambientPulse 8s ease-in-out infinite;
+      }
+
+      .ambient-rect.r1 {
+        top: 18%;
+        left: 12%;
+        animation-delay: 0s;
+      }
+      .ambient-rect.r2 {
+        top: 32%;
+        right: 18%;
+        animation-delay: 1.4s;
+      }
+      .ambient-rect.r3 {
+        top: 55%;
+        left: 25%;
+        animation-delay: 2.7s;
+      }
+      .ambient-rect.r4 {
+        top: 70%;
+        right: 10%;
+        animation-delay: 4.1s;
+      }
+      .ambient-rect.r5 {
+        top: 40%;
+        left: 50%;
+        transform: translateX(-50%);
+        animation-delay: 5.3s;
+      }
+
+      @keyframes ambientPulse {
+        0%,
+        100% {
+          opacity: 0;
+          box-shadow: 0 0 0px rgba(0, 0, 0, 0.76);
+        }
+        20% {
+          opacity: 0.18;
+          background: rgba(0, 255, 200, 0.06);
+          box-shadow: 0 0 14px rgba(0, 255, 200, 0.349);
+        }
+        50% {
+          opacity: 0.12;
+          background: rgba(255, 200, 0, 0.05);
+          box-shadow: 0 0 10px rgba(255, 200, 0, 0.445);
+        }
+        80% {
+          opacity: 0.16;
+          background: rgba(255, 80, 80, 0.05);
+          box-shadow: 0 0 12px rgba(255, 80, 80, 0.568);
+        }
+      }
+
+      .main {
+        min-height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        position: relative;
+        z-index: 1;
+      }
+
+      .wrapper {
+        width: 90%;
+        max-width: 900px;
+      }
+
+      .top-bar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 40px;
+        border-bottom: 1px solid #262626;
+        padding-bottom: 10px;
+      }
+
+      h1 {
+        font-size: 3rem;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        font-family: Copperplate, Papyrus, fantasy;
+      }
+
+      .settings-icon {
+        width: 70px;
+        height: 70px;
+        border-radius: 50%;
+        border: 2px solid #f5f5f5;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-size: 1.6rem;
+        cursor: pointer;
+        transition: transform 0.2s ease, box-shadow 0.2s ease,
+          background 0.2s ease;
+      }
+
+      .settings-icon:hover {
+        background: #181818;
+        transform: rotate(360deg);
+        box-shadow: 0 0 12px rgba(255, 255, 255, 0.15);
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 16px;
+      }
+
+      .slot {
+        border-radius: 10px;
+        border: 1px solid #f5f5f5;
+        height: 45px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-size: 0.9rem;
+        cursor: pointer;
+        transition: background 0.2s ease, transform 0.1s ease,
+          box-shadow 0.2s ease;
+        background: rgba(10, 10, 10, 0.9);
+        backdrop-filter: blur(2px);
+        animation: softPulse 2.8s ease-in-out infinite;
+        border-color: red;
+      }
+
+      @keyframes softPulse {
+        0% {
+          box-shadow: 0 0 0px rgba(187, 80, 80, 0.801);
+        }
+        50% {
+          box-shadow: 0 0 20px rgb(207, 39, 39);
+        }
+        100% {
+          box-shadow: 0 0 0px rgb(255, 2, 2);
+        }
+      }
+
+      .slot.success {
+        animation: greenPulse 2.8s ease-in-out infinite;
+        border-color: rgb(0, 255, 115);
+      }
+
+      @keyframes greenPulse {
+        0% {
+          box-shadow: 0 0 0px rgba(0, 255, 115, 0.24);
+        }
+        50% {
+          box-shadow: 0 0 20px rgba(0, 255, 115, 0.575);
+        }
+        100% {
+          box-shadow: 0 0 0px rgba(0, 255, 115, 0.644);
+        }
+      }
+
+      .slot.failed {
+        animation: yellowPulse 2.8s ease-in-out infinite;
+        border-color: yellow;
+      }
+
+      @keyframes yellowPulse {
+        0% {
+          box-shadow: 0 0 0px rgba(241, 217, 79, 0.623);
+        }
+        50% {
+          box-shadow: 0 0 20px rgba(255, 153, 0, 0.945);
+        }
+        100% {
+          box-shadow: 0 0 0px rgb(255, 230, 0);
+        }
+      }
+
+      .slot:hover {
+        background: #1b1b1b;
+        transform: translateY(var(--slot-hover-raise));
+        box-shadow: 0 0 10px rgba(255, 255, 255, 0.08);
+      }
+
+      .slot.locked {
+        opacity: 0.35;
+        cursor: default;
+        box-shadow: none;
+        animation: none;
+        border-color: white;
+      }
+
+      .hud {
+        position: fixed;
+        top: 24px;
+        left: 40px;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        font-family: Copperplate, Papyrus, fantasy;
+        z-index: 2;
+      }
+
+      .hud-top {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .hud-avatar {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        border: 2px solid #f5f5f5;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-weight: 700;
+        font-size: 1rem;
+        background: radial-gradient(circle at 30% 20%, #e91e63, #5a0b24);
+        box-shadow: 0 0 8px rgba(0, 0, 0, 0.6);
+      }
+
+      .hud-lives {
+        font-size: 1.75rem;
+        text-shadow: 0 0 4px rgba(0, 0, 0, 0.8);
+      }
+
+      .hud-lives span {
+        font-weight: 700;
+      }
+
+      .hud-timer {
+        font-size: 1.1rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: #c3c3c3;
+        text-shadow: 0 0 4px rgba(0, 0, 0, 0.7);
+      }
+
+      .overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.85);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 10;
+        opacity: 0;
+        visibility: hidden;
+        transition: opacity 0.2s ease, visibility 0s 0.2s;
+      }
+
+      .overlay.active {
+        opacity: 1;
+        visibility: visible;
+        transition: opacity 0.2s ease;
+      }
+
+      .settings-panel {
+        width: 90%;
+        max-width: 650px;
+        background: radial-gradient(circle at top, #171717, #050505);
+        border-radius: 14px;
+        border: 1px solid #333;
+        box-shadow: 0 0 25px rgba(0, 0, 0, 0.8);
+        padding: 22px 26px 20px;
+        position: relative;
+        font-family: Copperplate, Papyrus, fantasy;
+      }
+
+      .settings-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 16px;
+      }
+
+      .settings-title {
+        font-size: 1.4rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .close-btn {
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        border: 1px solid #555;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        font-size: 1rem;
+        transition: background 0.2s ease, transform 0.1s ease;
+      }
+
+      .close-btn:hover {
+        background: #262626;
+        transform: scale(1.05);
+      }
+
+      .settings-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 16px 26px;
+        font-size: 0.9rem;
+      }
+
+      .settings-group-title {
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: #bbbbbb;
+        margin-bottom: 6px;
+      }
+
+      label {
+        display: block;
+        margin-bottom: 4px;
+      }
+
+      input[type="range"] {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 100%;
+        height: 4px;
+        border-radius: 999px;
+        background: linear-gradient(90deg, #2b2b2b, #444);
+        outline: none;
+        cursor: pointer;
+        margin: 4px 0 8px;
+        font-family: inherit;
+      }
+
+      input[type="range"]:focus {
+        box-shadow: 0 0 6px rgba(255, 255, 255, 0.18);
+      }
+
+      input[type="range"]::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        background: #f5f5f5;
+        border: 1px solid #222;
+        box-shadow: 0 0 4px rgba(0, 0, 0, 0.5);
+        transition: transform 0.1s ease, box-shadow 0.1s ease,
+          background 0.2s ease;
+      }
+
+      input[type="range"]::-webkit-slider-thumb:hover {
+        transform: scale(1.05);
+        box-shadow: 0 0 6px rgba(255, 255, 255, 0.4);
+        background: #ffffff;
+      }
+
+      input[type="range"]::-moz-range-track {
+        height: 4px;
+        border-radius: 999px;
+        background: linear-gradient(90deg, #2b2b2b, #444);
+      }
+
+      input[type="range"]::-moz-range-thumb {
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        background: #f5f5f5;
+        border: 1px solid #222;
+        box-shadow: 0 0 4px rgba(0, 0, 0, 0.5);
+        transition: transform 0.1s ease, box-shadow 0.1s ease,
+          background 0.2s ease;
+      }
+
+      input[type="range"]::-moz-range-thumb:hover {
+        transform: scale(1.05);
+        box-shadow: 0 0 6px rgba(255, 255, 255, 0.4);
+        background: #ffffff;
+      }
+
+      .value-label {
+        font-size: 0.8rem;
+        text-align: right;
+        color: #bbbbbb;
+        margin-top: 2px;
+      }
+
+      select {
+        width: 100%;
+        padding: 6px 8px;
+        border-radius: 6px;
+        border: 1px solid #333;
+        background: #121212;
+        color: #f5f5f5;
+        font-family: inherit;
+      }
+
+      .bottom-actions {
+        margin-top: 16px;
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+      }
+
+      .btn {
+        padding: 8px 16px;
+        border-radius: 999px;
+        border: 1px solid #666;
+        background: #181818;
+        color: #f5f5f5;
+        cursor: pointer;
+        font-size: 0.9rem;
+        transition: background 0.2s ease, transform 0.1s ease,
+          box-shadow 0.1s ease;
+        font-family: inherit;
+      }
+
+      .btn:hover {
+        background: #262626;
+        transform: translateY(-1px);
+        box-shadow: 0 0 10px rgba(255, 255, 255, 0.12);
+      }
+
+      button,
+      select,
+      option,
+      input {
+        font-family: inherit;
+      }
+
+      #bgMusic {
+        display: none;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="gameRoot">
+
+  <!-- Alles was geschärft/heller/kontrastiger werden soll -->
+  <div id="filterLayer">
+    <div class="ambient">
+      <div class="ambient-rect r1"></div>
+      <div class="ambient-rect r2"></div>
+      <div class="ambient-rect r3"></div>
+      <div class="ambient-rect r4"></div>
+      <div class="ambient-rect r5"></div>
+    </div>
+
+    <div class="main">
+      <div class="wrapper">
+        <div class="top-bar">
+          <h1>Lobby</h1>
+          <div class="settings-icon" id="settingsButton">⚙</div>
+        </div>
+
+        <div class="grid">
+          <div class="slot" onclick="startLevel(1)">Raum 1 - Das Vorwissen</div>
+          <div class="slot" onclick="startLevel(2)">Raum 2 - Das Raumschiff</div>
+          <div class="slot" onclick="startLevel(3)">Raum 3</div>
+          <div class="slot locked">Locked</div>
+          <div class="slot locked">Locked</div>
+          <div class="slot locked">Locked</div>
+          <div class="slot locked">Locked</div>
+          <div class="slot locked">Locked</div>
+          <div class="slot locked">Locked</div>
+          <div class="slot locked">Locked</div>
+          <div class="slot locked">Locked</div>
+          <div class="slot locked">Locked</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SVG Filter darf außerhalb sein -->
+  <svg width="0" height="0" style="position:absolute">
+    <filter id="sharpenFilter">
+      <feConvolveMatrix
+        order="3"
+        kernelMatrix="
+          0 -1  0
+         -1  5 -1
+          0 -1  0"
+        divisor="1"
+        bias="0"
+      />
+    </filter>
+  </svg>
+
+  <!-- HUD NICHT schärfen -->
+  <div class="hud">
+    <div class="hud-top">
+      <div class="hud-avatar" id="hudInitial">P</div>
+      <div class="hud-lives"><span id="hudLives">x05</span></div>
+    </div>
+    <div class="hud-timer">ZEIT IM RAUM: <span id="hudTimer">00:00:00</span></div>
+  </div>
+
+  <!-- Overlay NICHT schärfen (und hier sind jetzt alle DIVs korrekt geschlossen) -->
+  <div class="overlay" id="settingsOverlay">
+    <div class="settings-panel">
+      <div class="settings-header">
+        <div class="settings-title">EINSTELLUNGEN</div>
+        <div class="close-btn" id="settingsClose">✕</div>
+      </div>
+
+      <div class="settings-grid">
+        <div>
+          <div class="settings-group-title">AUDIO</div>
+
+          <label for="masterVolume">Master-Lautstärke</label>
+          <input type="range" id="masterVolume" min="0" max="100" value="80" />
+          <div class="value-label" id="masterVolumeValue">80%</div>
+
+          <label for="musicVolume">Musik</label>
+          <input type="range" id="musicVolume" min="0" max="100" value="60" />
+          <div class="value-label" id="musicVolumeValue">60%</div>
+        </div>
+
+        <div>
+          <div class="settings-group-title">ANZEIGE</div>
+
+          <label for="brightness">Helligkeit</label>
+          <input type="range" id="brightness" min="0" max="100" value="50" />
+          <div class="value-label" id="brightnessValue">50%</div>
+
+          <label for="contrast">Kontrast</label>
+          <input type="range" id="contrast" min="0" max="100" value="50" />
+          <div class="value-label" id="contrastValue">50%</div>
+
+          <label for="sharpness">Schärfe</label>
+          <input type="range" id="sharpness" min="0" max="100" value="50" />
+          <div class="value-label" id="sharpnessValue">50%</div>
+        </div>
+      </div>
+
+      <div class="bottom-actions">
+        <button class="btn" id="resetSettings">Zurücksetzen</button>
+        <button class="btn" id="applySettings">Übernehmen</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+
+       
+
+              <label for="masterVolume">Master-Lautstärke</label>
+              <input
+                type="range"
+                id="masterVolume"
+                min="0"
+                max="100"
+                value="80"
+              />
+              <div class="value-label" id="masterVolumeValue">80%</div>
+
+              <label for="musicVolume">Musik</label>
+              <input
+                type="range"
+                id="musicVolume"
+                min="0"
+                max="100"
+                value="60"
+              />
+              <div class="value-label" id="musicVolumeValue">60%</div>
+            </div>
+
+            <div>
+              <div class="settings-group-title">ANZEIGE</div>
+
+              <label for="brightness">Helligkeit</label>
+              <input
+                type="range"
+                id="brightness"
+                min="0"
+                max="100"
+                value="50"
+              />
+              <div class="value-label" id="brightnessValue">50%</div>
+
+              <label for="contrast">Kontrast</label>
+              <input type="range" id="contrast" min="0" max="100" value="50" />
+              <div class="value-label" id="contrastValue">50%</div>
+
+              <label for="sharpness">Schärfe</label>
+              <input type="range" id="sharpness" min="0" max="100" value="50" />
+              <div class="value-label" id="sharpnessValue">50%</div>
+            </div>
+            <div>
+         <div class="bottom-actions">
+            <button class="btn" id="resetSettings">Zurücksetzen</button>
+            <button class="btn" id="applySettings">Übernehmen</button>
+          </div>
+        </div>
+      </div>
+
+      <audio
+        id="bgMusic"
+        src="Sakura-Girl-Cat-Walk-chosic.com_.mp3"
+        loop
+        preload="auto"
+      ></audio>
+      <audio id="uiClick" src="click.mp3" preload="auto"></audio>
+      <audio id="uiHover" src="hover.mp3" preload="auto"></audio>
+    </div>
+
+    <script>
+      // =============== Raum-Wechsel ===============
+     function startLevel(n) {
+  const pages = {
+    1: "room1.html",
+    2: "room2.html",
+    3: "room3.html"
+  };
+
+  const target = pages[n];
+  if (target) {
+    window.location.href = target;
+  } else {
+    alert("Raum " + n + " ist noch in Arbeit.");
+  }
+}
+
+
+      function markSuccess(n) {
+        const slot = document.querySelector(".grid .slot:nth-child(" + n + ")");
+        if (!slot) return;
+        slot.classList.remove("failed");
+        slot.classList.add("success");
+      }
+
+      function markFailed(n) {
+        const slot = document.querySelector(".grid .slot:nth-child(" + n + ")");
+        if (!slot) return;
+        slot.classList.remove("success");
+        slot.classList.add("failed");
+      }
+
+      // =============== HUD ===============
+      const hudInitial = document.getElementById("hudInitial");
+      const hudLivesEl = document.getElementById("hudLives");
+      const hudTimerEl = document.getElementById("hudTimer");
+
+      const storedName = (
+        localStorage.getItem("escape_username") || "Player"
+      ).trim();
+      let lives = parseInt(localStorage.getItem("escape_lives") || "5", 10);
+      if (lives <= 0) {
+        window.location.href = "gameover.html";
+      }
+
+      hudInitial.textContent = storedName.charAt(0).toUpperCase() || "P";
+
+      function updateLivesDisplay() {
+        const value = String(lives).padStart(2, "0");
+        hudLivesEl.textContent = "x" + value;
+      }
+      updateLivesDisplay();
+
+      const room1State = localStorage.getItem("escape_room1_state");
+      if (room1State === "success") {
+        markSuccess(1);
+      } else if (room1State === "failed") {
+        markFailed(1);
+      }
+
+      // =============== GLOBALER TIMER (Session) ===============
+      const SESSION_TIME_KEY = "escape_session_start";
+
+      function getSessionStartTime() {
+        let stored = sessionStorage.getItem(SESSION_TIME_KEY);
+        let t = stored ? parseInt(stored, 10) : NaN;
+        if (isNaN(t)) {
+          t = Date.now();
+          sessionStorage.setItem(SESSION_TIME_KEY, String(t));
+        }
+        return t;
+      }
+
+      const sessionStartTime = getSessionStartTime();
+
+      function updateTimer() {
+        const diff = Date.now() - sessionStartTime;
+        const totalSeconds = Math.floor(diff / 1000);
+        const hours = Math.floor(totalSeconds / 3600);
+        const minutes = Math.floor((totalSeconds % 3600) / 60);
+        const seconds = totalSeconds % 60;
+        hudTimerEl.textContent =
+          String(hours).padStart(2, "0") +
+          ":" +
+          String(minutes).padStart(2, "0") +
+          ":" +
+          String(seconds).padStart(2, "0");
+      }
+      updateTimer();
+      setInterval(updateTimer, 1000);
+
+      // =============== Settings Overlay ===============
+      const settingsButton = document.getElementById("settingsButton");
+      const settingsOverlay = document.getElementById("settingsOverlay");
+      const settingsClose = document.getElementById("settingsClose");
+
+      settingsButton.addEventListener("click", () => {
+        settingsOverlay.classList.add("active");
+      });
+
+      settingsClose.addEventListener("click", () => {
+        settingsOverlay.classList.remove("active");
+      });
+
+      settingsOverlay.addEventListener("click", (e) => {
+        if (e.target === settingsOverlay) {
+          settingsOverlay.classList.remove("active");
+        }
+      });
+
+      // =============== Slider-Labels ===============
+      function bindSlider(id, labelId, suffix = "%") {
+        const slider = document.getElementById(id);
+        const label = document.getElementById(labelId);
+        if (!slider || !label) return;
+        function update() {
+          label.textContent = slider.value + suffix;
+        }
+        slider.addEventListener("input", () => {
+          update();
+          saveSettings();
+        });
+        update();
+      }
+
+      bindSlider("masterVolume", "masterVolumeValue");
+      bindSlider("musicVolume", "musicVolumeValue");
+      bindSlider("brightness", "brightnessValue");
+      bindSlider("contrast", "contrastValue");
+      bindSlider("sharpness", "sharpnessValue");
+
+      // =============== DISPLAY-EFFEKTE ===============
+      const brightnessSlider = document.getElementById("brightness");
+      const contrastSlider = document.getElementById("contrast");
+      const sharpnessSlider  = document.getElementById("sharpness");
+
+
+      function applyDisplaySettings() {
+  const b = Number(brightnessSlider.value);
+  const c = Number(contrastSlider.value);
+  const sh = Number(sharpnessSlider.value);
+
+  document.documentElement.style.setProperty(
+    "--game-brightness",
+    String(0.4 + (b / 100) * 1.2)
+  );
+  document.documentElement.style.setProperty(
+    "--game-contrast",
+    String(0.5 + (c / 100) * 1.0)
+  );
+
+  const strength = 5 + (sh / 100) * 3; 
+  const matrix = `
+    0 -1  0
+   -1 ${strength} -1
+    0 -1  0
+  `;
+
+  document
+    .querySelector("#sharpenFilter feConvolveMatrix")
+    .setAttribute("kernelMatrix", matrix);
+    const layer = document.getElementById("filterLayer");
+if (sh <= 0) layer.classList.remove("sharpenOn");
+else layer.classList.add("sharpenOn");
+
+}
+
+
+      sharpnessSlider.addEventListener("input", () => {
+  applyDisplaySettings();
+  saveSettings();
+});
+
+
+      brightnessSlider.addEventListener("input", () => {
+        applyDisplaySettings();
+        saveSettings();
+      });
+      contrastSlider.addEventListener("input", () => {
+        applyDisplaySettings();
+        saveSettings();
+      });
+
+      // =============== Musik & UI-Sounds ===============
+      const bgMusic = document.getElementById("bgMusic");
+      const musicSlider = document.getElementById("musicVolume");
+      const masterSlider = document.getElementById("masterVolume");
+      const sndClick = document.getElementById("uiClick");
+      const sndHover = document.getElementById("uiHover");
+
+      function applyMusicVolume() {
+        if (!bgMusic) return;
+        const volMusic = Number(musicSlider.value) / 100;
+        bgMusic.volume = volMusic;
+      }
+
+      function applyEffectVolumes() {
+  const master = Number(masterSlider.value) / 100;
+  const vol = master;
+  if (sndClick) sndClick.volume = vol;
+  if (sndHover) sndHover.volume = vol;
+}
+
+
+      function fadeInMusic(durationMs = 2000) {
+        if (!bgMusic) return;
+
+        const target = Number(musicSlider.value) / 100;
+        if (target <= 0) {
+          bgMusic.volume = 0;
+          return;
+        }
+
+        let current = 0;
+        bgMusic.volume = 0;
+
+        const steps = 30;
+        const stepTime = durationMs / steps;
+
+        const interval = setInterval(() => {
+          current += target / steps;
+          if (current >= target) {
+            current = target;
+            clearInterval(interval);
+          }
+          bgMusic.volume = current;
+        }, stepTime);
+      }
+
+      function startBgMusic() {
+        if (!bgMusic) return;
+
+        const target = Number(musicSlider.value) / 100;
+        if (target <= 0) {
+          bgMusic.pause();
+          bgMusic.currentTime = 0;
+          bgMusic.volume = 0;
+          return;
+        }
+
+        bgMusic.currentTime = 0;
+        bgMusic.loop = true;
+        bgMusic.volume = 0;
+
+        bgMusic
+          .play()
+          .then(() => {
+            fadeInMusic(2500);
+          })
+          .catch(() => {
+            document.addEventListener("click", tryResumeMusic, { once: true });
+          });
+      }
+
+      function tryResumeMusic() {
+        if (!bgMusic) return;
+
+        const target = Number(musicSlider.value) / 100;
+        if (target <= 0) {
+          bgMusic.pause();
+          bgMusic.volume = 0;
+          return;
+        }
+
+        bgMusic.currentTime = 0;
+        bgMusic
+          .play()
+          .then(() => fadeInMusic(2500))
+          .catch(() => {});
+      }
+
+      // Slider-Events für Audio
+      musicSlider.addEventListener("input", () => {
+        applyMusicVolume();
+        if (!bgMusic) return;
+
+        const vol = Number(musicSlider.value) / 100;
+        if (vol <= 0) {
+          bgMusic.pause();
+          bgMusic.currentTime = 0;
+        } else if (bgMusic.paused) {
+          bgMusic.play().catch(() => {});
+        }
+        saveSettings();
+      });
+
+      masterSlider.addEventListener("input", () => {
+        applyEffectVolumes();
+        saveSettings();
+      });
+
+      // UI-Sounds
+      function playClickSound() {
+        if (!sndClick) return;
+        sndClick.pause();
+        sndClick.currentTime = 0;
+        sndClick.play().catch(() => {});
+      }
+
+      function playHoverSound() {
+        if (!sndHover) return;
+        sndHover.pause();
+        sndHover.currentTime = 0;
+        sndHover.play().catch(() => {});
+      }
+
+      const uiButtons = document.querySelectorAll(
+        ".slot, .btn, .settings-icon, .close-btn, select"
+      );
+
+      uiButtons.forEach((el) => {
+        el.addEventListener("click", playClickSound);
+        el.addEventListener("mouseenter", playHoverSound);
+      });
+
+      // =============== Settings speichern / laden ===============
+      const SETTINGS_KEY = "escape_settings";
+
+     function saveSettings() {
+  const data = {
+    master: Number(masterSlider.value),
+    music: Number(musicSlider.value),
+    brightness: Number(brightnessSlider.value),
+    contrast: Number(contrastSlider.value),
+    sharpness: Number(sharpnessSlider.value)
+  };
+  localStorage.setItem(SETTINGS_KEY, JSON.stringify(data));
+}
+
+
+
+
+
+      function loadSettings() {
+  const raw = localStorage.getItem(SETTINGS_KEY);
+  if (raw) {
+    try {
+      const data = JSON.parse(raw);
+      if (typeof data.master === "number") masterSlider.value = data.master;
+      if (typeof data.music === "number") musicSlider.value = data.music;
+      if (typeof data.brightness === "number") brightnessSlider.value = data.brightness;
+      if (typeof data.contrast === "number") contrastSlider.value = data.contrast;
+      if (typeof data.sharpness === "number") sharpnessSlider.value = data.sharpness;
+    } catch (e) {
+      console.warn("Konnte Einstellungen nicht laden:", e);
+    }
+  }
+
+  applyDisplaySettings();
+  applyMusicVolume();
+  applyEffectVolumes();
+
+  document.getElementById("masterVolumeValue").textContent = masterSlider.value + "%";
+  document.getElementById("musicVolumeValue").textContent  = musicSlider.value + "%";
+  document.getElementById("brightnessValue").textContent   = brightnessSlider.value + "%";
+  document.getElementById("contrastValue").textContent     = contrastSlider.value + "%";
+  document.getElementById("sharpnessValue").textContent    = sharpnessSlider.value + "%";
+}
+
+
+      const resetBtn = document.getElementById("resetSettings");
+      const applyBtn = document.getElementById("applySettings");
+
+      resetBtn.addEventListener("click", () => {
+  masterSlider.value = 80;
+  musicSlider.value = 60;
+  brightnessSlider.value = 50;
+  contrastSlider.value = 50;
+  sharpnessSlider.value = 50;
+
+  applyDisplaySettings();
+  applyMusicVolume();
+  applyEffectVolumes();
+  saveSettings();
+  loadSettings();
+});
+
+
+      applyBtn.addEventListener("click", () => {
+        saveSettings();
+        console.log("Einstellungen übernommen");
+        settingsOverlay.classList.remove("active");
+      });
+
+      window.addEventListener("load", () => {
+        loadSettings();
+        startBgMusic();
+      });
+    </script>
+  </body>
+</html>

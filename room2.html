@@ -1,0 +1,2196 @@
+<!DOCTYPE html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Raum 2 – Kurskorrektur</title>
+
+    <style>
+      /* =========================
+         GLOBAL / THEME
+      ========================== */
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      #pillStrikes { display: none; }
+
+      :root {
+        --bg0: #0a1320;
+        --bg1: #0f2237;
+        --panel: rgba(255, 255, 255, 0.06);
+        --panel2: rgba(255, 255, 255, 0.1);
+        --line: rgba(255, 255, 255, 0.14);
+        --text: #eaf3ff;
+        --muted: rgba(234, 243, 255, 0.7);
+
+        --aqua: #46f2ff;
+        --mint: #67ffb3;
+        --amber: #ffb84d;
+        --red: #ff4d5f;
+
+        --shadow: 0 18px 60px rgba(0, 0, 0, 0.45);
+        --radius: 22px;
+
+        --scan: rgba(70, 242, 255, 0.14);
+        --glow: 0 0 18px rgba(70, 242, 255, 0.35);
+
+        --danger: rgba(255, 77, 95, 0.12);
+        --dangerGlow: 0 0 24px rgba(255, 77, 95, 0.35);
+      }
+
+      html,
+      body {
+        height: 100%;
+      }
+
+      body {
+        background: radial-gradient(
+            1200px 700px at 20% 20%,
+            rgba(70, 242, 255, 0.08),
+            transparent 55%
+          ),
+          radial-gradient(
+            900px 600px at 85% 30%,
+            rgba(103, 255, 179, 0.07),
+            transparent 55%
+          ),
+          linear-gradient(135deg, var(--bg0), var(--bg1));
+        color: var(--text);
+        font-family: Copperplate, Papyrus, fantasy;
+        overflow: hidden;
+      }
+
+      /* Subtle sci-fi grid */
+      body::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        background-image: linear-gradient(
+            rgba(255, 255, 255, 0.045) 1px,
+            transparent 1px
+          ),
+          linear-gradient(
+            90deg,
+            rgba(255, 255, 255, 0.045) 1px,
+            transparent 1px
+          );
+        background-size: 64px 64px;
+        opacity: 0.28;
+        pointer-events: none;
+        z-index: 0;
+      }
+
+      /* Star speckles */
+      body::after {
+        content: "";
+        position: fixed;
+        inset: 0;
+        background-image: radial-gradient(
+            rgba(255, 255, 255, 0.55) 1px,
+            transparent 1px
+          );
+        background-size: 120px 120px;
+        opacity: 0.08;
+        pointer-events: none;
+        z-index: 0;
+        transform: translateZ(0);
+      }
+
+      #gameRoot {
+        position: relative;
+        z-index: 1;
+        min-height: 100vh;
+        padding: 22px;
+      }
+
+      /* =========================
+         HUD TOP BAR
+      ========================== */
+      .topbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 14px;
+        padding: 14px 16px;
+        border-radius: 18px;
+        background: linear-gradient(
+          180deg,
+          rgba(255, 255, 255, 0.08),
+          rgba(255, 255, 255, 0.05)
+        );
+        border: 1px solid var(--line);
+        box-shadow: var(--shadow);
+      }
+
+      .brand {
+        display: flex;
+        align-items: baseline;
+        gap: 10px;
+        letter-spacing: 1px;
+      }
+
+      .brand .title {
+        font-size: 14px;
+        text-shadow: var(--glow);
+      }
+
+      .brand .subtitle {
+        font-size: 13px;
+        opacity: 0.75;
+      }
+
+      .statusPills {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+      }
+
+      .pill {
+        padding: 8px 10px;
+        border-radius: 999px;
+        border: 1px solid var(--line);
+        background: rgba(0, 0, 0, 0.18);
+        font-size: 12px;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        white-space: nowrap;
+      }
+
+      .dot {
+        width: 9px;
+        height: 9px;
+        border-radius: 999px;
+        background: var(--mint);
+        box-shadow: 0 0 16px rgba(103, 255, 179, 0.6);
+      }
+
+      .dot.warn {
+        background: var(--amber);
+        box-shadow: 0 0 16px rgba(255, 184, 77, 0.6);
+      }
+
+      .dot.danger {
+        background: var(--red);
+        box-shadow: 0 0 18px rgba(255, 77, 95, 0.7);
+      }
+
+      /* =========================
+         MAIN LAYOUT
+      ========================== */
+      .layout {
+        margin-top: 16px;
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 16px;
+        min-height: calc(100vh - 22px - 22px - 70px);
+      }
+
+      .cockpit {
+        border-radius: var(--radius);
+        border: 1px solid var(--line);
+        background: linear-gradient(
+          180deg,
+          rgba(255, 255, 255, 0.07),
+          rgba(0, 0, 0, 0.06)
+        );
+        box-shadow: var(--shadow);
+        overflow: hidden;
+        position: relative;
+      }
+
+      .cockpit::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: radial-gradient(
+            900px 500px at 50% -10%,
+            rgba(70, 242, 255, 0.10),
+            transparent 60%
+          ),
+          radial-gradient(
+            500px 300px at 20% 110%,
+            rgba(103, 255, 179, 0.08),
+            transparent 60%
+          );
+        pointer-events: none;
+      }
+
+      .cockpitInner {
+        position: relative;
+        padding: 18px;
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 16px;
+      }
+
+      @media (min-width: 980px) {
+        .cockpitInner {
+          grid-template-columns: 1.2fr 1.6fr 1.2fr;
+          align-items: stretch;
+        }
+      }
+
+      .screen {
+        border-radius: 18px;
+        border: 1px solid var(--line);
+        background: rgba(0, 0, 0, 0.28);
+        box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.04);
+        overflow: hidden;
+        position: relative;
+        min-height: 220px;
+      }
+
+      .screenHeader {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        padding: 12px 12px 10px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.09);
+        background: linear-gradient(
+          180deg,
+          rgba(255, 255, 255, 0.05),
+          rgba(0, 0, 0, 0)
+        );
+        font-size: 13px;
+        letter-spacing: 0.5px;
+        color: var(--muted);
+      }
+
+      .screenBody {
+        padding: 12px;
+        position: relative;
+        height: calc(100% - 46px);
+      }
+
+      .scanline {
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(
+          180deg,
+          transparent,
+          rgba(70, 242, 255, 0.08),
+          transparent
+        );
+        mix-blend-mode: screen;
+        opacity: 0.7;
+        animation: scan 3.4s linear infinite;
+        pointer-events: none;
+      }
+
+      @keyframes scan {
+        0% {
+          transform: translateY(-60%);
+        }
+        100% {
+          transform: translateY(60%);
+        }
+      }
+
+      .miniGrid {
+        position: absolute;
+        inset: 0;
+        background-image: linear-gradient(
+            rgba(70, 242, 255, 0.08) 1px,
+            transparent 1px
+          ),
+          linear-gradient(
+            90deg,
+            rgba(70, 242, 255, 0.08) 1px,
+            transparent 1px
+          );
+        background-size: 26px 26px;
+        opacity: 0.22;
+        pointer-events: none;
+      }
+
+      .btn {
+        border: 1px solid rgba(255, 255, 255, 0.16);
+        background: rgba(0, 0, 0, 0.22);
+        color: var(--text);
+        padding: 10px 12px;
+        border-radius: 14px;
+        cursor: pointer;
+        font-family: inherit;
+        transition: transform 0.12s ease, background 0.12s ease,
+          border-color 0.12s ease, box-shadow 0.12s ease, opacity 0.12s ease;
+        user-select: none;
+      }
+
+      .btn:hover {
+        transform: translateY(-1px);
+        background: rgba(255, 255, 255, 0.08);
+        border-color: rgba(70, 242, 255, 0.35);
+        box-shadow: var(--glow);
+      }
+
+      .btn:active {
+        transform: translateY(0px);
+      }
+
+      .btnPrimary {
+        border-color: rgba(70, 242, 255, 0.4);
+        box-shadow: var(--glow);
+      }
+
+      .btnDanger {
+        border-color: rgba(255, 77, 95, 0.45);
+        box-shadow: var(--dangerGlow);
+      }
+
+      .btn[disabled] {
+        opacity: 0.45;
+        cursor: not-allowed;
+        transform: none !important;
+        box-shadow: none !important;
+      }
+
+      /* =========================
+         LEFT SCREEN: PLANET LIST / MAP ACCESS
+      ========================== */
+      .planetList {
+        display: grid;
+        gap: 10px;
+      }
+
+      .planetRow {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        padding: 10px 10px;
+        border-radius: 14px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        background: rgba(255, 255, 255, 0.04);
+      }
+
+      .planetName {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 14px;
+        letter-spacing: 0.5px;
+      }
+
+      .planetBadge {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: rgba(70, 242, 255, 0.9);
+        box-shadow: 0 0 14px rgba(70, 242, 255, 0.6);
+      }
+
+      .planetMeta {
+        font-size: 12px;
+        color: var(--muted);
+        text-align: right;
+        min-width: 92px;
+      }
+
+      .targetPulse {
+        animation: targetPulse 0.9s ease-in-out infinite;
+        background: rgba(255, 77, 95, 0.85) !important;
+        box-shadow: 0 0 18px rgba(255, 77, 95, 0.8) !important;
+      }
+
+      @keyframes targetPulse {
+        0% {
+          transform: scale(1);
+          filter: brightness(1);
+        }
+        50% {
+          transform: scale(1.35);
+          filter: brightness(1.2);
+        }
+        100% {
+          transform: scale(1);
+          filter: brightness(1);
+        }
+      }
+
+      /* =========================
+         MIDDLE SCREEN: WARNING
+      ========================== */
+      .warningPanel {
+        display: grid;
+        gap: 12px;
+        height: 100%;
+        align-content: start;
+      }
+
+      .warningTitle {
+        font-size: 18px;
+        letter-spacing: 1px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .warningTitle .tri {
+        width: 0;
+        height: 0;
+        border-left: 10px solid transparent;
+        border-right: 10px solid transparent;
+        border-bottom: 18px solid var(--amber);
+        filter: drop-shadow(0 0 10px rgba(255, 184, 77, 0.55));
+      }
+
+      .warningText {
+        font-size: 20px;
+        color: var(--muted);
+        line-height: 1.35;
+      }
+
+      .targetBox {
+        margin-top: 8px;
+        padding: 18px;
+        border-radius: 16px;
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        background: rgba(255, 255, 255, 0.05);
+      }
+
+      .targetBox .label {
+        font-size: 18px;
+        color: var(--muted);
+        letter-spacing: 0.8px;
+      }
+
+      .targetBox .value {
+        margin-top: 6px;
+        font-size: 20px;
+        letter-spacing: 1px;
+        text-shadow: var(--glow);
+      }
+
+      .hint {
+        margin-top: 8px;
+        padding: 10px 12px;
+        border-radius: 14px;
+        border: 1px dashed rgba(70, 242, 255, 0.34);
+        background: rgba(70, 242, 255, 0.08);
+        color: rgba(234, 243, 255, 0.92);
+        font-size: 13px;
+        line-height: 1.35;
+      }
+
+      /* =========================
+         RIGHT SCREEN: RANDOM DATA
+      ========================== */
+      .randomGrid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+      }
+
+      .tile {
+        padding: 10px;
+        border-radius: 14px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        background: rgba(255, 255, 255, 0.04);
+      }
+
+      .tile .k {
+        font-size: 11px;
+        color: var(--muted);
+        letter-spacing: 0.7px;
+      }
+
+      .tile .v {
+        margin-top: 6px;
+        font-size: 16px;
+        letter-spacing: 0.8px;
+        text-shadow: var(--glow);
+      }
+
+      /* =========================
+         CONTROL CONSOLE
+      ========================== */
+      .console {
+        border-top: 1px solid rgba(255, 255, 255, 0.08);
+        padding: 16px 18px 18px;
+        display: grid;
+        gap: 14px;
+      }
+
+      .consoleHeader {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+
+      .consoleHeader .h {
+        font-size: 16px;
+        letter-spacing: 0.8px;
+        text-shadow: var(--glow);
+      }
+
+      .consoleHeader .sub {
+        font-size: 12px;
+        color: var(--muted);
+      }
+
+      .sliders {
+        display: grid;
+        gap: 12px;
+      }
+
+      @media (min-width: 980px) {
+        .sliders {
+          grid-template-columns: 1fr 1fr;
+        }
+      }
+
+      .sliderCard {
+        padding: 30px 18px 30px;
+        border-radius: 18px;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        background: rgba(0, 0, 0, 0.18);
+        box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.03);
+      }
+
+      .sliderTop {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 10px;
+      }
+
+      .sliderTop .name {
+        font-size: 20px;
+        letter-spacing: 0.7px;
+      }
+
+      .sliderTop .read {
+        font-size: 20px;
+        color: rgba(234, 243, 255, 0.95);
+        text-shadow: var(--glow);
+      }
+
+      input[type="range"] {
+        width: 100%;
+        margin-top: 10px;
+        appearance: none;
+        height: 10px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.08);
+        outline: none;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+      }
+
+      input[type="range"]::-webkit-slider-thumb {
+        appearance: none;
+        width: 22px;
+        height: 22px;
+        border-radius: 50%;
+        background: rgba(70, 242, 255, 0.95);
+        border: 1px solid rgba(255, 255, 255, 0.35);
+        box-shadow: 0 0 18px rgba(70, 242, 255, 0.55);
+        cursor: pointer;
+      }
+
+      input[type="range"]::-moz-range-thumb {
+        width: 22px;
+        height: 22px;
+        border-radius: 50%;
+        background: rgba(70, 242, 255, 0.95);
+        border: 1px solid rgba(255, 255, 255, 0.35);
+        box-shadow: 0 0 18px rgba(70, 242, 255, 0.55);
+        cursor: pointer;
+      }
+
+      .actions {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: flex-end;
+      }
+
+      /* =========================
+         OVERLAY MAP
+      ========================== */
+      .overlay {
+        position: fixed;
+        inset: 0;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 22px;
+        z-index: 50;
+        background: rgba(0, 0, 0, 0.55);
+        backdrop-filter: blur(6px);
+      }
+
+      .overlay.show {
+        display: flex;
+      }
+
+      .mapModal {
+        width: min(1600px, 98vw);
+        height: min(920px, 96vh);
+        border-radius: 26px;
+        border: 1px solid rgba(255, 255, 255, 0.16);
+        background: radial-gradient(
+            1000px 500px at 30% 20%,
+            rgba(70, 242, 255, 0.10),
+            transparent 60%
+          ),
+          radial-gradient(
+            900px 500px at 85% 70%,
+            rgba(103, 255, 179, 0.08),
+            transparent 60%
+          ),
+          rgba(10, 18, 32, 0.9);
+        box-shadow: var(--shadow);
+        overflow: hidden;
+        position: relative;
+      }
+
+      .mapModal::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background-image: linear-gradient(
+            rgba(255, 255, 255, 0.045) 1px,
+            transparent 1px
+          ),
+          linear-gradient(
+            90deg,
+            rgba(255, 255, 255, 0.045) 1px,
+            transparent 1px
+          );
+        background-size: 54px 54px;
+        opacity: 0.22;
+        pointer-events: none;
+      }
+
+      .mapTop {
+        position: relative;
+        z-index: 2;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 14px 14px 10px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+        background: linear-gradient(
+          180deg,
+          rgba(255, 255, 255, 0.06),
+          rgba(0, 0, 0, 0)
+        );
+      }
+
+      .mapTitle {
+        font-size: 16px;
+        letter-spacing: 0.9px;
+        text-shadow: var(--glow);
+      }
+
+      .mapHint {
+        font-size: 12px;
+        color: var(--muted);
+        line-height: 1.2;
+        text-align: right;
+      }
+
+      .mapCanvasWrap {
+        position: relative;
+        z-index: 1;
+        height: calc(100% - 62px);
+        padding: 10px;
+      }
+
+      .mapBoard {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        border-radius: 26px;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        background: rgba(0, 0, 0, 0.22);
+        overflow: hidden;
+        zoom: 1.15;
+      }
+
+      .mapBoard .fog {
+        position: absolute;
+        inset: -50px;
+        background: radial-gradient(
+            500px 350px at 30% 35%,
+            rgba(70, 242, 255, 0.06),
+            transparent 60%
+          ),
+          radial-gradient(
+            600px 420px at 78% 62%,
+            rgba(103, 255, 179, 0.05),
+            transparent 60%
+          );
+        pointer-events: none;
+        filter: blur(2px);
+        opacity: 0.9;
+      }
+
+      .mapSvg {
+        position: absolute;
+        inset: 0;
+      }
+
+      .node {
+        position: absolute;
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        border: 2px solid rgba(255, 255, 255, 0.22);
+        background: rgba(70, 242, 255, 0.12);
+        box-shadow: inset 0 0 0 1px rgba(70, 242, 255, 0.16);
+        display: grid;
+        place-items: center;
+      }
+
+      .node::after {
+        content: "";
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        background: rgba(70, 242, 255, 0.9);
+        box-shadow: 0 0 16px rgba(70, 242, 255, 0.55);
+      }
+
+      .node.start {
+        border-color: rgba(103, 255, 179, 0.35);
+        background: rgba(103, 255, 179, 0.10);
+      }
+
+      .node.start::after {
+        background: rgba(103, 255, 179, 0.95);
+        box-shadow: 0 0 16px rgba(103, 255, 179, 0.65);
+      }
+
+      .node.target {
+        border-color: rgba(255, 77, 95, 0.45);
+        background: rgba(255, 77, 95, 0.10);
+        animation: targetPulse 0.9s ease-in-out infinite;
+      }
+
+      .node.target::after {
+        background: rgba(255, 77, 95, 0.95);
+        box-shadow: 0 0 18px rgba(255, 77, 95, 0.75);
+      }
+
+      .nodeLabel {
+        position: absolute;
+        transform: translate(-50%, -50%);
+        margin-top: 36px;
+        left: 50%;
+        top: 50%;
+        width: 160px;
+        text-align: center;
+        font-size: 12px;
+        letter-spacing: 0.7px;
+        color: rgba(234, 243, 255, 0.9);
+        text-shadow: 0 0 14px rgba(70, 242, 255, 0.35);
+        pointer-events: none;
+      }
+
+      .pathValue {
+  position: absolute;
+  padding: 8px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: rgba(0, 0, 0, 0.55);
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  color: rgba(234, 243, 255, 0.96);
+  text-shadow: 0 0 16px rgba(70, 242, 255, 0.35);
+  pointer-events: none;
+  backdrop-filter: blur(8px);
+  font-family: Epilogue , sans-serif;
+  /* bessere Lesbarkeit */
+  box-shadow:
+    0 10px 26px rgba(0, 0, 0, 0.35),
+    inset 0 0 0 1px rgba(70, 242, 255, 0.14);
+}
+
+/* ===== SIMPLE LOADER ===== */
+#gameLoader {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: grid;
+  place-items: center;
+  background: rgba(0,0,0,0.65);
+  backdrop-filter: blur(6px);
+  transition: opacity 500ms ease, visibility 0s 500ms;
+}
+
+#gameLoader.hide {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.loaderCard {
+  width: min(520px, 92vw);
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.16);
+  background: rgba(10, 18, 32, 0.88);
+  box-shadow: 0 18px 60px rgba(0, 0, 0, 0.45);
+  padding: 16px;
+}
+
+.loaderTop {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+}
+
+.loaderTitle {
+  font-size: 16px;
+  letter-spacing: 0.5px;
+}
+
+.loaderSub {
+  font-size: 12px;
+  color: rgba(234, 243, 255, 0.7);
+  text-align: right;
+}
+
+.loaderHint {
+  margin-top: 6px;
+  font-size: 12px;
+  color: rgba(234, 243, 255, 0.7);
+}
+
+.loaderBody {
+  margin-top: 12px;
+}
+
+.progressWrap {
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.16);
+  background: rgba(0,0,0,0.25);
+  overflow: hidden;
+  height: 12px;
+}
+
+.progressBar {
+  height: 100%;
+  width: 0%;
+  background: rgba(70,242,255,0.85);
+  transition: width 200ms ease;
+}
+
+
+      /* =========================
+         MODAL (SUCCESS / FAIL)
+      ========================== */
+      .centerModal {
+        position: fixed;
+        inset: 0;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 22px;
+        z-index: 60;
+        background: rgba(0, 0, 0, 0.62);
+        backdrop-filter: blur(7px);
+      }
+
+      .centerModal.show {
+        display: flex;
+      }
+
+      .modalCard {
+        width: min(560px, 100%);
+        border-radius: 24px;
+        border: 1px solid rgba(255, 255, 255, 0.18);
+        background: rgba(10, 18, 32, 0.92);
+        box-shadow: var(--shadow);
+        overflow: hidden;
+      }
+
+      .modalTop {
+        padding: 14px 16px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+      }
+
+      .modalTop .t {
+        font-size: 16px;
+        letter-spacing: 0.9px;
+        text-shadow: var(--glow);
+      }
+
+      .modalBody {
+        padding: 16px;
+        color: rgba(234, 243, 255, 0.88);
+        line-height: 1.35;
+        font-size: 14px;
+      }
+
+      .modalBody .big {
+        font-size: 18px;
+        margin-top: 10px;
+        text-shadow: var(--glow);
+      }
+
+      .modalActions {
+        padding: 14px 16px 16px;
+        display: flex;
+        gap: 10px;
+        justify-content: flex-end;
+        flex-wrap: wrap;
+      }
+
+      /* =========================
+         SMALL HELPERS
+      ========================== */
+      .muted {
+        color: var(--muted);
+      }
+
+      .mono {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+          "Liberation Mono", "Courier New", monospace;
+      }
+
+      .dangerBlock {
+        border: 1px solid rgba(255, 77, 95, 0.35);
+        background: rgba(255, 77, 95, 0.08);
+        box-shadow: var(--dangerGlow);
+      }
+
+      .blinkDanger {
+        animation: blink 0.6s steps(2, end) infinite;
+      }
+
+      @keyframes blink {
+        0% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.15;
+        }
+        100% {
+          opacity: 1;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <div id="gameLoader" aria-label="Lädt…">
+  <div class="loaderCard">
+
+    <div class="loaderTop">
+      <div>
+        <div class="loaderTitle">RAUM 2 • KURSKORREKTUR</div>
+        <div class="loaderHint">Cockpit wird hochgefahren… bitte kurz warten.</div>
+      </div>
+      <div class="loaderSub">
+        <div class="mono" id="loaderPercent">0%</div>
+        <div id="loaderStatus">Initialisiere Systeme</div>
+      </div>
+    </div>
+
+    <div class="loaderBody">
+      <div class="loaderLine">
+        <span>Navigation</span>
+        <span class="mono" id="loaderNav">…</span>
+      </div>
+      <div class="loaderLine">
+        <span>Telemetrie</span>
+        <span class="mono" id="loaderTel">…</span>
+      </div>
+      <div class="loaderLine">
+        <span>Konsolen-Input</span>
+        <span class="mono" id="loaderCon">…</span>
+      </div>
+
+      <div class="progressWrap" aria-hidden="true">
+        <div class="progressBar" id="loaderBar"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    <div id="gameRoot">
+      <div class="topbar">
+        <div class="brand">
+          <div class="title">RAUM 2</div>
+          <div class="subtitle">Cockpit-Protokoll</div>
+        </div>
+
+        <div class="statusPills">
+          <div class="pill" id="pillState">
+            <span class="dot warn" id="stateDot"></span>
+            <span id="stateText">Systemcheck…</span>
+          </div>
+          <div class="pill">
+            <span class="dot"></span>
+            <span>Reaktor: <span class="mono" id="reactorTxt">STABIL</span></span>
+          </div>
+          <div class="pill">
+            <span class="dot"></span>
+            <span>Zeit: <span class="mono" id="timerTxt">01:30</span></span>
+          </div>
+         <div class="pill" id="pillStrikes">
+  <span class="dot"></span>
+  <span>Fehler: <span class="mono" id="strikesTxt">—</span></span>
+</div>
+
+        </div>
+      </div>
+
+      <div class="layout">
+        <div class="cockpit">
+          <div class="cockpitInner">
+            <!-- LEFT SCREEN -->
+            <div class="screen" aria-label="Linker Bildschirm">
+              <div class="screenHeader">
+                <span>NAV-KARTE</span>
+                <button class="btn btnPrimary" id="btnOpenMap" disabled>
+                  Karte öffnen
+                </button>
+              </div>
+              <div class="screenBody">
+                <div class="miniGrid"></div>
+                <div class="scanline"></div>
+
+                <div class="planetList" id="planetList"></div>
+
+                <div class="hint" style="margin-top: 12px">
+                  <b>Aufgabe:</b> Merkt euch die Werte <b>auf dem Weg</b> zum
+                  markierten Planeten – und stellt sie danach im Cockpit ein.
+                </div>
+              </div>
+            </div>
+
+            <!-- MIDDLE SCREEN -->
+            <div class="screen" aria-label="Mittlerer Bildschirm">
+              <div class="screenHeader">
+                <span>WARNUNG</span>
+                <span class="muted mono" id="midCode">NAV-ALERT</span>
+              </div>
+              <div class="screenBody" id="midBody">
+                <div class="miniGrid"></div>
+                <div class="scanline"></div>
+
+                <div class="warningPanel">
+                  <div class="warningTitle">
+                    <span class="tri"></span>
+                    <span id="warningHeadline">SYSTEMCHECK LÄUFT…</span>
+                  </div>
+
+                  <div class="warningText" id="warningText">
+                    Navigationscomputer synchronisiert Sternkarten. Bitte
+                    warten…
+                  </div>
+
+                  <div class="targetBox" id="targetBox" style="display: none">
+                    <div class="label">NÄCHSTER ZIELPLANET</div>
+                    <div class="value" id="targetName">—</div>
+                    <div class="muted" style="margin-top: 6px; font-size: 12px">
+                      Kurswerte müssen exakt eingestellt werden.
+                    </div>
+                  </div>
+
+                  <div class="hint" id="midHint" style="display: none">
+                    Öffne die Karte, merke dir die Werte auf dem Weg und
+                    stelle sie unten am Panel ein. Du hast
+                    <b>3 Versuche</b> – sonst wirst du „rausgeschleudert“.
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- RIGHT SCREEN -->
+            <div class="screen" aria-label="Rechter Bildschirm">
+              <div class="screenHeader">
+                <span>TELEMETRIE</span>
+                <span class="muted mono" id="seedTxt">SEED: —</span>
+              </div>
+              <div class="screenBody">
+                <div class="miniGrid"></div>
+                <div class="scanline"></div>
+
+                <div class="randomGrid" id="randomGrid"></div>
+
+              </div>
+            </div>
+          </div>
+
+          <!-- CONSOLE -->
+          <div class="console">
+            <div class="consoleHeader">
+              <div>
+                <div class="h">COCKPIT-REGLER</div>
+                <div class="sub">
+                  Stelle die Kurswerte für den Zielplaneten ein.
+                </div>
+              </div>
+              <div class="actions">
+                <button class="btn" id="btnReset" disabled>Reset</button>
+                <button class="btn btnPrimary" id="btnSubmit" disabled>
+                  Werte bestätigen
+                </button>
+              </div>
+            </div>
+
+            <div class="sliders">
+              <div class="sliderCard">
+                <div class="sliderTop">
+                  <div class="name">Temperatur (Kelvin)</div>
+                  <div class="read mono" id="readKelvin">0 K</div>
+                </div>
+                <input
+                  id="sKelvin"
+                  type="range"
+                  min="100"
+                  max="900"
+                  value="100"
+                  step="1"
+                  disabled
+                />
+              </div>
+
+              <div class="sliderCard">
+                <div class="sliderTop">
+                  <div class="name">Druck (Bar)</div>
+                  <div class="read mono" id="readBar">0 bar</div>
+                </div>
+                <input
+                  id="sBar"
+                  type="range"
+                  min="1"
+                  max="120"
+                  value="1"
+                  step="1"
+                  disabled
+                />
+              </div>
+
+              <div class="sliderCard">
+                <div class="sliderTop">
+                  <div class="name">Spannung (Volt)</div>
+                  <div class="read mono" id="readVolt">0 V</div>
+                </div>
+                <input
+                  id="sVolt"
+                  type="range"
+                  min="50"
+                  max="600"
+                  value="50"
+                  step="1"
+                  disabled
+                />
+              </div>
+
+              <div class="sliderCard">
+                <div class="sliderTop">
+                  <div class="name">Frequenz (MHz)</div>
+                  <div class="read mono" id="readMHz">0 MHz</div>
+                </div>
+                <input
+                  id="sMHz"
+                  type="range"
+                  min="1"
+                  max="99"
+                  value="1"
+                  step="1"
+                  disabled
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- MAP OVERLAY -->
+      <div class="overlay" id="mapOverlay" aria-hidden="true">
+        <div class="mapModal" role="dialog" aria-label="Karte">
+          <div class="mapTop">
+            <div>
+              <div class="mapTitle">Sternkarte • Routen & Werte</div>
+              <div class="muted" style="margin-top: 4px; font-size: 12px">
+                Startpunkt: <span class="mono">SOL-DOCK</span>
+              </div>
+            </div>
+            <div class="mapHint">
+              Merke dir die Werte <b>auf dem Weg</b><br />
+              zum rot blinkenden Planeten.
+            </div>
+            <button class="btn" id="btnCloseMap">Zurück ins Cockpit</button>
+          </div>
+
+          <div class="mapCanvasWrap">
+            <div class="mapBoard" id="mapBoard">
+              <div class="fog"></div>
+
+              <!-- SVG for dashed paths -->
+              <svg class="mapSvg" id="mapSvg" viewBox="0 0 1000 560" preserveAspectRatio="none">
+                <!-- paths injected by JS -->
+              </svg>
+
+              <!-- nodes injected by JS -->
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CENTER MODAL -->
+      <div class="centerModal" id="centerModal" aria-hidden="true">
+        <div class="modalCard" id="modalCard">
+          <div class="modalTop" id="modalTop">
+            <div class="t" id="modalTitle">—</div>
+            <div class="muted mono" id="modalTag">—</div>
+          </div>
+          <div class="modalBody" id="modalBody"></div>
+          <div class="modalActions" id="modalActions"></div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+
+      // ---------- Loader (simple)
+const loader = document.getElementById("gameLoader");
+const loaderBar = document.getElementById("loaderBar");
+const loaderPercent = document.getElementById("loaderPercent");
+const loaderStatus = document.getElementById("loaderStatus");
+
+function setLoader(pct, status) {
+  if (!loader) return;
+  const p = Math.max(0, Math.min(100, pct));
+  if (loaderBar) loaderBar.style.width = p + "%";
+  if (loaderPercent) loaderPercent.textContent = p + "%";
+  if (loaderStatus && status) loaderStatus.textContent = status;
+}
+
+function hideLoader() {
+  if (!loader) return;
+  loader.classList.add("hide");
+  // optional: nach Fade komplett entfernen, damit es nicht klick-blockt
+  setTimeout(() => loader.remove(), 650);
+}
+
+      /* =========================================================
+         RAUM 2 – KURSKORREKTUR (Single-File)
+         - Kein "Zurück zur Lobby"
+         - Fail => "Game Over" Redirect (falls vorhanden), sonst Modal bleibt
+         - Zielplanet: der am weitesten entfernte (max distance)
+      ========================================================== */
+
+      // ---------- Helpers
+      const $ = (sel) => document.querySelector(sel);
+      const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+      const pad2 = (n) => String(n).padStart(2, "0");
+
+      // Simple beep (WebAudio)
+      function beep(freq = 880, dur = 0.08, type = "sine", vol = 0.03) {
+        try {
+          const ctx = new (window.AudioContext || window.webkitAudioContext)();
+          const o = ctx.createOscillator();
+          const g = ctx.createGain();
+          o.type = type;
+          o.frequency.value = freq;
+          g.gain.value = vol;
+          o.connect(g);
+          g.connect(ctx.destination);
+          o.start();
+          setTimeout(() => {
+            o.stop();
+            ctx.close();
+          }, dur * 1000);
+        } catch (_) {}
+      }
+
+      // ---------- Game State
+      const GAME = {
+        strikes: 0,
+        maxStrikes: 3,
+        totalSeconds: 90, // 1:30
+        timer: null,
+        started: false,
+        solved: false,
+        seed: 0,
+        target: null,
+      };
+
+      // 5 Planets (name, distance, route values)
+      // Values are what players must set via sliders.
+      // Displayed on map as "on the path" values.
+      const PLANETS = [
+        {
+          id: "AUR-7",
+          name: "AURORA-7",
+          distance: 42,
+          values: { kelvin: 410, bar: 22, volt: 180, mhz: 17 },
+        },
+        {
+          id: "KRY-3",
+          name: "KRYOS-III",
+          distance: 58,
+          values: { kelvin: 600, bar: 50, volt: 300, mhz: 42 },
+        },
+        {
+          id: "VLT-9",
+          name: "VOLTAR-IX",
+          distance: 66,
+          values: { kelvin: 720, bar: 61, volt: 420, mhz: 9 },
+        },
+        {
+          id: "NEX-2",
+          name: "NEXUS-II",
+          distance: 74,
+          values: { kelvin: 530, bar: 35, volt: 255, mhz: 73 },
+        },
+        {
+          id: "EON-5",
+          name: "EON-5",
+          distance: 88, // farthest => target
+          values: { kelvin: 650, bar: 50, volt: 300, mhz: 88 },
+        },
+      ];
+
+      // Map layout (normalized to 1000x560)
+      const MAP = {
+        start: { x: 160, y: 455, label: "SOL-DOCK" },
+        nodes: [
+          { planetId: "AUR-7", x: 210, y: 120 },
+          { planetId: "KRY-3", x: 520, y: 95 },
+          { planetId: "VLT-9", x: 825, y: 135 },
+          { planetId: "NEX-2", x: 690, y: 420 },
+          { planetId: "EON-5", x: 835, y: 350 },
+        ],
+        // “Wege wie im Bild”: jeder Planet hat einen geschwungenen, gestrichelten Pfad
+        // Wir machen pro Planet ein paar Kontrollpunkte (quadratische Bezier via SVG path Q/T)
+        paths: [
+          {
+            planetId: "AUR-7",
+            d: "M160,455 C140,320 170,240 250,200 C310,170 280,130 210,120",
+            valuePos: [
+              { x: 175, y: 360, key: "bar" },
+              { x: 210, y: 260, key: "kelvin" },
+              { x: 235, y: 170, key: "mhz" },
+            ],
+          },
+          {
+            planetId: "KRY-3",
+            d: "M160,455 C250,420 320,360 360,300 C420,210 440,130 520,95",
+            valuePos: [
+              { x: 265, y: 410, key: "bar" },
+              { x: 365, y: 310, key: "volt" },
+              { x: 470, y: 165, key: "kelvin" },
+            ],
+          },
+          {
+            planetId: "VLT-9",
+            d: "M160,455 C320,470 420,440 520,380 C640,310 700,210 825,135",
+            valuePos: [
+              { x: 330, y: 450, key: "mhz" },
+              { x: 545, y: 360, key: "bar" },
+              { x: 700, y: 230, key: "volt" },
+            ],
+          },
+          {
+            planetId: "NEX-2",
+            d: "M160,455 C290,520 420,520 520,500 C600,485 630,455 690,420",
+            valuePos: [
+              { x: 300, y: 505, key: "volt" },
+              { x: 460, y: 505, key: "kelvin" },
+              { x: 615, y: 468, key: "bar" },
+            ],
+          },
+          {
+            planetId: "EON-5",
+            d: "M160,455 C260,390 360,350 450,340 C600,320 690,390 835,350",
+            valuePos: [
+              { x: 265, y: 405, key: "kelvin" },
+              { x: 520, y: 335, key: "bar" },
+              { x: 740, y: 368, key: "volt" },
+              { x: 650, y: 360, key: "mhz" },
+            ],
+          },
+        ],
+      };
+
+      // ---------- DOM refs
+      const planetListEl = $("#planetList");
+      const btnOpenMap = $("#btnOpenMap");
+      const mapOverlay = $("#mapOverlay");
+      const btnCloseMap = $("#btnCloseMap");
+      const mapBoard = $("#mapBoard");
+      const mapSvg = $("#mapSvg");
+
+      const stateDot = $("#stateDot");
+      const stateText = $("#stateText");
+      const timerTxt = $("#timerTxt");
+      const strikesTxt = $("#strikesTxt");
+      const reactorTxt = $("#reactorTxt");
+
+      const warningHeadline = $("#warningHeadline");
+      const warningText = $("#warningText");
+      const targetBox = $("#targetBox");
+      const targetName = $("#targetName");
+      const midHint = $("#midHint");
+
+      const randomGrid = $("#randomGrid");
+      const seedTxt = $("#seedTxt");
+
+      const sKelvin = $("#sKelvin");
+      const sBar = $("#sBar");
+      const sVolt = $("#sVolt");
+      const sMHz = $("#sMHz");
+
+      const readKelvin = $("#readKelvin");
+      const readBar = $("#readBar");
+      const readVolt = $("#readVolt");
+      const readMHz = $("#readMHz");
+
+      const btnSubmit = $("#btnSubmit");
+      const btnReset = $("#btnReset");
+
+      const centerModal = $("#centerModal");
+      const modalCard = $("#modalCard");
+      const modalTop = $("#modalTop");
+      const modalTitle = $("#modalTitle");
+      const modalTag = $("#modalTag");
+      const modalBody = $("#modalBody");
+      const modalActions = $("#modalActions");
+
+      // ---------- UI builders
+      function renderPlanetList(targetId) {
+        planetListEl.innerHTML = "";
+        const sorted = [...PLANETS].sort((a, b) => a.distance - b.distance);
+
+        for (const p of sorted) {
+          const row = document.createElement("div");
+          row.className = "planetRow";
+          row.innerHTML = `
+            <div class="planetName">
+              <span class="planetBadge" data-badge="${p.id}"></span>
+              <span>${p.name}</span>
+            </div>
+            <div class="planetMeta">
+              Dist: <span class="mono">${p.distance}</span>
+            </div>
+          `;
+          planetListEl.appendChild(row);
+        }
+
+        const badge = planetListEl.querySelector(`[data-badge="${targetId}"]`);
+        if (badge) badge.classList.add("targetPulse");
+      }
+
+      function randFromSeed(seed) {
+        // deterministic-ish LCG
+        let s = seed >>> 0;
+        return () => {
+          s = (1664525 * s + 1013904223) >>> 0;
+          return s / 4294967296;
+        };
+      }
+
+      function renderRandomTelemetry(seed) {
+        const r = randFromSeed(seed);
+        const tiles = [
+          ["STAR-DENS", (r() * 9.9 + 0.1).toFixed(2)],
+          ["ION-FLOW", (r() * 300 + 50).toFixed(0)],
+          ["HULL-TEMP", (r() * 40 + 10).toFixed(1)],
+          ["SIGNAL", (r() * 99).toFixed(0)],
+          ["DRIFT", (r() * 6 - 3).toFixed(2)],
+          ["AUX-BUS", (r() * 24 + 5).toFixed(1)],
+        ];
+
+        randomGrid.innerHTML = "";
+        for (const [k, v] of tiles) {
+          const el = document.createElement("div");
+          el.className = "tile";
+          el.innerHTML = `<div class="k">${k}</div><div class="v mono">${v}</div>`;
+          randomGrid.appendChild(el);
+        }
+      }
+
+      function setPill(state) {
+        // state: "check" | "alert" | "danger" | "ok"
+        stateDot.classList.remove("warn", "danger");
+        $("#pillState").classList.remove("dangerBlock");
+
+        if (state === "check") {
+          stateDot.classList.add("warn");
+          stateText.textContent = "Systemcheck…";
+        } else if (state === "alert") {
+          stateDot.classList.add("warn");
+          stateText.textContent = "Warnung aktiv";
+        } else if (state === "danger") {
+          stateDot.classList.add("danger");
+          $("#pillState").classList.add("dangerBlock");
+          stateText.textContent = "KRITISCH";
+        } else if (state === "ok") {
+          stateText.textContent = "Kurs stabil";
+        }
+      }
+
+      function setTimerUI() {
+        const m = Math.floor(GAME.totalSeconds / 60);
+        const s = GAME.totalSeconds % 60;
+        timerTxt.textContent = `${pad2(m)}:${pad2(s)}`;
+      }
+
+      function setStrikesUI() {
+        strikesTxt.textContent = `${GAME.strikes}/${GAME.maxStrikes}`;
+      }
+
+      function enableControls(enable) {
+        sKelvin.disabled = !enable;
+        sBar.disabled = !enable;
+        sVolt.disabled = !enable;
+        sMHz.disabled = !enable;
+        btnSubmit.disabled = !enable;
+        btnReset.disabled = !enable;
+      }
+
+      function updateReads() {
+        readKelvin.textContent = `${sKelvin.value} K`;
+        readBar.textContent = `${sBar.value} bar`;
+        readVolt.textContent = `${sVolt.value} V`;
+        readMHz.textContent = `${sMHz.value} MHz`;
+      }
+
+      // ---------- Map rendering
+      function clearMap() {
+        // remove nodes/labels/values (keep svg element)
+        mapSvg.innerHTML = "";
+        // remove divs except svg + fog
+        [...mapBoard.querySelectorAll(".node, .nodeLabel, .pathValue")].forEach(
+          (n) => n.remove()
+        );
+      }
+
+      function renderMap(targetPlanetId) {
+  clearMap();
+
+  // Path styles (dashed)
+  const defs = document.createElementNS("http://www.w3.org/2000/svg", "defs");
+  defs.innerHTML = `
+    <filter id="glowAqua">
+      <feGaussianBlur stdDeviation="2.2" result="b"/>
+      <feMerge>
+        <feMergeNode in="b"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <filter id="glowRed">
+      <feGaussianBlur stdDeviation="2.6" result="b"/>
+      <feMerge>
+        <feMergeNode in="b"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  `;
+  mapSvg.appendChild(defs);
+
+  // ---- Helpers for value pills
+  const KEYS = ["kelvin", "bar", "volt", "mhz"];
+  const pretty = (key, val) =>
+    key === "kelvin" ? `${val} K` :
+    key === "bar"    ? `${val} bar` :
+    key === "volt"   ? `${val} V` :
+                       `${val} MHz`;
+
+  // Basis-Offsets pro Werttyp (damit sich nicht alle exakt stapeln)
+  const OFF = {
+    kelvin: { x: -44, y: -26 },
+    bar:    { x:  10, y: -34 },
+    volt:   { x: -48, y:  16 },
+    mhz:    { x:  14, y:  14 },
+  };
+
+  // Positionen entlang des Pfads (4 Werte => schön verteilt)
+  const T = [0.22, 0.42, 0.62, 0.80];
+
+  // Sammle bereits platzierte Labels (für Anti-Overlap)
+  const placed = [];
+
+  // grober Overlap-Check in %-Koordinaten (reicht hier)
+  function hit(a, b) {
+    // "Box" in Prozent; grob auf Pill-Größe angenähert
+    const ax1 = a.x - 4, ay1 = a.y - 3, ax2 = a.x + 4, ay2 = a.y + 3;
+    const bx1 = b.x - 4, by1 = b.y - 3, bx2 = b.x + 4, by2 = b.y + 3;
+    return !(ax2 < bx1 || ax1 > bx2 || ay2 < by1 || ay1 > by2);
+  }
+
+  function placePillAvoidOverlap(pill, leftPct, topPct, key) {
+    const base = OFF[key] || { x: -34, y: -14 };
+
+    // mehrere kleine "Nudges", falls es kollidiert
+    const nudges = [
+      { dx: base.x,       dy: base.y       },
+      { dx: base.x + 30,  dy: base.y       },
+      { dx: base.x - 30,  dy: base.y       },
+      { dx: base.x,       dy: base.y + 28  },
+      { dx: base.x,       dy: base.y - 28  },
+      { dx: base.x + 24,  dy: base.y + 24  },
+      { dx: base.x - 24,  dy: base.y - 24  },
+      { dx: base.x + 44,  dy: base.y - 18  },
+      { dx: base.x - 44,  dy: base.y + 18  },
+    ];
+
+    for (const n of nudges) {
+      const candidate = {
+        x: leftPct + (n.dx / 1000) * 100,
+        y: topPct  + (n.dy / 560)  * 100
+      };
+
+      let collision = false;
+      for (const p of placed) {
+        if (hit(candidate, p)) { collision = true; break; }
+      }
+
+      if (!collision) {
+        // Wir setzen direkt Prozentwerte (ohne -34px etc.)
+        pill.style.left = `calc(${candidate.x}% - 0px)`;
+        pill.style.top  = `calc(${candidate.y}% - 0px)`;
+        placed.push(candidate);
+        return;
+      }
+    }
+
+    // Fallback
+    pill.style.left = `calc(${leftPct}% + ${base.x}px)`;
+    pill.style.top  = `calc(${topPct}% + ${base.y}px)`;
+    placed.push({ x: leftPct, y: topPct });
+  }
+
+  // ---- Render paths + auto values
+  for (const p of MAP.paths) {
+    const planet = PLANETS.find((x) => x.id === p.planetId);
+    const isTarget = p.planetId === targetPlanetId;
+
+    const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    path.setAttribute("d", p.d);
+    path.setAttribute("fill", "none");
+    path.setAttribute("stroke", isTarget ? "rgba(255,77,95,0.9)" : "rgba(70,242,255,0.75)");
+    path.setAttribute("stroke-width", isTarget ? "3.2" : "2.2");
+    path.setAttribute("stroke-dasharray", isTarget ? "10 10" : "8 10");
+    path.setAttribute("filter", isTarget ? "url(#glowRed)" : "url(#glowAqua)");
+    path.setAttribute("opacity", isTarget ? "0.95" : "0.8");
+    mapSvg.appendChild(path);
+
+    // AUTO: immer 4 Values entlang des Pfades platzieren
+    const totalLen = path.getTotalLength();
+
+    for (let i = 0; i < KEYS.length; i++) {
+      const key = KEYS[i];
+      const val = planet.values[key];
+
+      const pt = path.getPointAtLength(totalLen * T[i]);
+
+      // SVG ist 1000x560 => Prozent fürs Board
+      const leftPct = (pt.x / 1000) * 100;
+      const topPct  = (pt.y / 560)  * 100;
+
+      const pill = document.createElement("div");
+      pill.className = "pathValue";
+      pill.textContent = pretty(key, val);
+
+      if (isTarget) {
+        pill.style.borderColor = "rgba(255,77,95,0.60)";
+        pill.style.background  = "rgba(0,0,0,0.82)";
+        pill.style.boxShadow   = "0 0 26px rgba(255,77,95,0.35)";
+        pill.style.textShadow  = "0 0 14px rgba(255,77,95,0.45)";
+      }
+
+      mapBoard.appendChild(pill);
+      placePillAvoidOverlap(pill, leftPct, topPct, key);
+    }
+  }
+
+  // Start node
+  const startNode = document.createElement("div");
+  startNode.className = "node start";
+  placeNode(startNode, MAP.start.x, MAP.start.y);
+  mapBoard.appendChild(startNode);
+
+  const startLabel = document.createElement("div");
+  startLabel.className = "nodeLabel";
+  startLabel.textContent = MAP.start.label;
+  placeNode(startLabel, MAP.start.x, MAP.start.y);
+  mapBoard.appendChild(startLabel);
+
+  // Planet nodes
+  for (const n of MAP.nodes) {
+    const planet = PLANETS.find((x) => x.id === n.planetId);
+    const isTarget = n.planetId === targetPlanetId;
+
+    const node = document.createElement("div");
+    node.className = "node" + (isTarget ? " target" : "");
+    placeNode(node, n.x, n.y);
+    mapBoard.appendChild(node);
+
+    const label = document.createElement("div");
+    label.className = "nodeLabel";
+    label.textContent = planet.name;
+    placeNode(label, n.x, n.y);
+    mapBoard.appendChild(label);
+  }
+}
+
+
+      function placeNode(el, x, y) {
+        const leftPct = (x / 1000) * 100;
+        const topPct = (y / 560) * 100;
+        el.style.left = `calc(${leftPct}% - 22px)`;
+        el.style.top = `calc(${topPct}% - 22px)`;
+      }
+
+      // ---------- Modal
+      function showModal({ title, tag, bodyHtml, danger = false, actions = [] }) {
+        modalTitle.textContent = title;
+        modalTag.textContent = tag || "";
+        modalBody.innerHTML = bodyHtml || "";
+        modalActions.innerHTML = "";
+
+        modalTop.classList.toggle("dangerBlock", !!danger);
+        modalCard.classList.toggle("dangerBlock", !!danger);
+
+        for (const a of actions) {
+          const b = document.createElement("button");
+          b.className = "btn " + (a.primary ? "btnPrimary" : "") + (a.danger ? "btnDanger" : "");
+          b.textContent = a.text;
+          b.onclick = a.onClick;
+          modalActions.appendChild(b);
+        }
+
+        centerModal.classList.add("show");
+        centerModal.setAttribute("aria-hidden", "false");
+      }
+
+      function closeModal() {
+        centerModal.classList.remove("show");
+        centerModal.setAttribute("aria-hidden", "true");
+      }
+
+      // ---------- Game flow
+      function pickTargetPlanet() {
+  // zufälliger Planet aus den 5
+  const idx = Math.floor(Math.random() * PLANETS.length);
+  return PLANETS[idx];
+}
+
+
+      function startTimer() {
+        setTimerUI();
+        GAME.timer = setInterval(() => {
+          if (GAME.solved) return;
+          GAME.totalSeconds -= 1;
+          setTimerUI();
+
+          if (GAME.totalSeconds === 25) {
+            // extra tension
+            reactorTxt.textContent = "SCHWANKT";
+            beep(520, 0.08, "square", 0.025);
+            beep(740, 0.08, "square", 0.02);
+          }
+
+          if (GAME.totalSeconds <= 10 && GAME.totalSeconds > 0) {
+            $("#pillState").classList.add("blinkDanger");
+            setPill("danger");
+            beep(880, 0.06, "sine", 0.03);
+          }
+
+          if (GAME.totalSeconds <= 0) {
+            GAME.totalSeconds = 0;
+            setTimerUI();
+            failOut("Zeit abgelaufen. Kursdrift wurde zu groß.");
+          }
+        }, 1000);
+      }
+
+      function beginScenario() {
+        GAME.started = true;
+        setPill("check");
+        setLoader(20, "Starte Systeme…");
+
+
+        // generate seed for random telemetry
+        GAME.seed = (Date.now() ^ (Math.random() * 1e9)) >>> 0;
+        seedTxt.textContent = `SEED: ${GAME.seed.toString(16).toUpperCase()}`;
+        renderRandomTelemetry(GAME.seed);
+
+        // warning sequence
+        warningHeadline.textContent = "SYSTEMCHECK LÄUFT…";
+        warningText.textContent =
+          "Navigationscomputer synchronisiert Sternkarten. Bitte warten…";
+
+        // after a short delay, trigger alert and reveal target
+        setTimeout(() => {
+          GAME.target = pickTargetPlanet();
+
+          setPill("alert");
+          warningHeadline.textContent = "ABSTURZ GEFAHR!";
+          warningText.textContent =
+            "Gravitationslinse erkannt. Der Autopilot wählt den am weitesten entfernten sicheren Planeten. Kurswerte müssen manuell bestätigt werden.";
+
+          targetBox.style.display = "block";
+          targetName.textContent = GAME.target.name;
+
+          midHint.style.display = "block";
+
+          // enable map + controls
+          btnOpenMap.disabled = false;
+          enableControls(true);
+          btnSubmit.disabled = false;
+          btnReset.disabled = false;
+
+          // highlight planet list
+          renderPlanetList(GAME.target.id);
+
+          // render map (target blinking)
+          renderMap(GAME.target.id);
+
+          // beep warning
+          beep(660, 0.12, "sawtooth", 0.03);
+          setTimeout(() => beep(880, 0.12, "sawtooth", 0.03), 120);
+setLoader(100, "Bereit.");
+hideLoader();
+
+          // start timer now that puzzle is active
+          startTimer();
+        }, 2600);
+      }
+
+      // ---------- Validation
+      function within(a, b, tol) {
+        return Math.abs(a - b) <= tol;
+      }
+
+      function submitValues() {
+        if (!GAME.target || GAME.solved) return;
+
+        const k = Number(sKelvin.value);
+        const b = Number(sBar.value);
+        const v = Number(sVolt.value);
+        const m = Number(sMHz.value);
+
+        const tgt = GAME.target.values;
+
+        // tolerances (feel fair but still needs memorizing)
+        const ok =
+          within(k, tgt.kelvin, 2) &&
+          within(b, tgt.bar, 1) &&
+          within(v, tgt.volt, 5) &&
+          within(m, tgt.mhz, 1);
+
+        if (ok) {
+          solve();
+        } else {
+          GAME.strikes += 1;
+          setStrikesUI();
+
+          beep(220, 0.12, "square", 0.03);
+          setPill("danger");
+          reactorTxt.textContent = "INSTABIL";
+
+         if (GAME.strikes >= GAME.maxStrikes) {
+ failOut("Zeit abgelaufen. Kursdrift wurde zu groß.");
+  return;
+}
+
+
+          showModal({
+            title: "FALSCHER KURS",
+            tag: `STRIKE ${GAME.strikes}/${GAME.maxStrikes}`,
+            danger: true,
+            bodyHtml: `
+              Die Werte passen nicht zum Zielplaneten.<br/>
+              <div class="big">Noch ${GAME.maxStrikes - GAME.strikes} Versuch(e)!</div>
+              <div style="margin-top:10px" class="muted">
+                Tipp: Öffne die Karte erneut und achte auf die Werte <b>auf dem Weg</b>.
+              </div>
+            `,
+            actions: [
+              {
+                text: "Karte öffnen",
+                primary: true,
+                onClick: () => {
+                  closeModal();
+                  openMap();
+                },
+              },
+              {
+                text: "Weiter",
+                onClick: () => closeModal(),
+              },
+            ],
+          });
+        }
+      }
+
+      function solve() {
+        localStorage.setItem("escape_room2_state", "success");
+        GAME.solved = true;
+        clearInterval(GAME.timer);
+        $("#pillState").classList.remove("blinkDanger");
+        setPill("ok");
+        reactorTxt.textContent = "STABIL";
+
+        beep(880, 0.10, "sine", 0.03);
+        setTimeout(() => beep(1175, 0.12, "sine", 0.03), 120);
+
+        showModal({
+          title: "KURS GESETZT",
+          tag: "NAV-LOCK",
+          bodyHtml: `
+            Zielplanet: <b>${GAME.target.name}</b><br/>
+            Kursparameter bestätigt. Autopilot übernimmt…
+            <div class="big">System stabilisiert sich.</div>
+            <div style="margin-top:10px" class="muted">
+              (Wenn du eine nächste Datei hast: <span class="mono">raum3.html</span> wird automatisch versucht.)
+            </div>
+          `,
+          actions: [
+            {
+              text: "Fortsetzen",
+              primary: true,
+              onClick: () => {
+                // optional: go next room if exists
+                tryGoNextRoom();
+              },
+            },
+          ],
+        });
+      }
+
+   function loseLife() {
+  // Globales Leben-System aus deiner Lobby:
+  // let lives = parseInt(localStorage.getItem("escape_lives") || "5", 10);
+
+  const KEY = "escape_lives";
+  let lives = parseInt(localStorage.getItem(KEY) || "5", 10);
+
+  if (isNaN(lives)) lives = 5;
+
+  lives = Math.max(0, lives - 1);
+  localStorage.setItem(KEY, String(lives));
+
+  // wenn keine Leben mehr -> Game Over
+  if (lives <= 0) {
+    window.location.href = "gameover.html";
+  }
+
+  return lives;
+}
+
+
+
+function restartRound() {
+  // Reset strikes & timer (du wolltest "Leben verlieren", nicht Strike-GameOver)
+  GAME.strikes = 0;
+  setStrikesUI();
+
+  // Timer reset
+  GAME.totalSeconds = 90;
+  clearInterval(GAME.timer);
+  $("#pillState").classList.remove("blinkDanger");
+
+  // Telemetrie neu
+  GAME.seed = (Date.now() ^ (Math.random() * 1e9)) >>> 0;
+  seedTxt.textContent = `SEED: ${GAME.seed.toString(16).toUpperCase()}`;
+  renderRandomTelemetry(GAME.seed);
+
+  // neuen Zielplaneten (farthest bleibt gleich bei fixen distances, aber du bekommst frisches Feeling)
+  // Wenn du wirklich random target willst, sag – dann ändere ich dir das direkt.
+  GAME.target = pickTargetPlanet();
+
+  // UI neu setzen
+  setPill("alert");
+  reactorTxt.textContent = "STABIL";
+
+  warningHeadline.textContent = "ABSTURZ GEFAHR!";
+  warningText.textContent =
+    "Gravitationslinse erkannt. Kurswerte müssen erneut bestätigt werden.";
+
+  targetBox.style.display = "block";
+  targetName.textContent = GAME.target.name;
+  midHint.style.display = "block";
+
+  // Slider Reset
+  sKelvin.value = 300;
+  sBar.value = 50;
+  sVolt.value = 300;
+  sMHz.value = 42;
+  updateReads();
+
+  // Map/List refresh
+  renderPlanetList(GAME.target.id);
+  renderMap(GAME.target.id);
+
+  // Weiter geht’s
+  enableControls(true);
+  btnOpenMap.disabled = false;
+
+  GAME.solved = false; // Runde wieder aktiv
+  startTimer();
+
+  beep(660, 0.10, "sawtooth", 0.03);
+}
+
+
+      function tryGoNextRoom() {
+        // Kein Lobby-Button. Wir versuchen raum3.html – wenn nicht vorhanden, bleibt das Modal.
+        closeModal();
+        const next = "raum3.html";
+        // Give a tiny feedback
+        showModal({
+          title: "ÜBERGABE",
+          tag: "AUTO",
+          bodyHtml: `
+            Navigationssequenz abgeschlossen.<br/>
+            Wenn <span class="mono">${next}</span> existiert, wird jetzt weitergeleitet.
+          `,
+          actions: [],
+        });
+        setTimeout(() => {
+          window.location.href = next;
+        }, 700);
+      }
+
+      function goGameOver() {
+  // Optional: Wenn du ein globales GameOver-System hast:
+  if (window.parent && typeof window.parent.goGameOver === "function") {
+    try { window.parent.goGameOver(); return; } catch (_) {}
+  }
+  if (typeof window.goGameOver === "function" && window.goGameOver !== goGameOver) {
+    try { window.goGameOver(); return; } catch (_) {}
+  }
+
+  // Fallback: gameover.html
+  window.location.href = "gameover.html";
+}
+
+
+  function failOut(reason) {
+  if (GAME.solved) return;
+
+  clearInterval(GAME.timer);
+  $("#pillState").classList.remove("blinkDanger");
+  setPill("danger");
+  reactorTxt.textContent = "SCHWANKT";
+
+  // Raumstatus für Lobby-Farbe
+  localStorage.setItem("escape_room2_state", "failed");
+
+  // 1 globales Leben abziehen (escape_lives)
+  const livesLeft = loseLife(); // leitet bei 0 automatisch zu gameover.html
+
+  // Wenn wir hier sind, sind noch Leben übrig -> zurück zur Lobby
+  showModal({
+    title: "SYSTEMAUSSTOSS",
+    tag: `LEBEN ÜBRIG: ${String(livesLeft).padStart(2, "0")}`,
+    danger: true,
+    bodyHtml: `
+      <b>${reason}</b><br/>
+      Du verlierst <b>1 Leben</b> und wirst zurück zur Lobby geschickt.
+    `,
+    actions: [
+      {
+        text: "Zur Lobby",
+        primary: true,
+        onClick: () => {
+          window.location.href = "screen3.html"; // ggf. anpassen falls deine Lobby anders heißt
+        },
+      },
+    ],
+  });
+}
+
+     // ---------- Map overlay controls
+      function openMap() {
+        if (!GAME.target) return;
+        mapOverlay.classList.add("show");
+        mapOverlay.setAttribute("aria-hidden", "false");
+        beep(740, 0.06, "sine", 0.02);
+      }
+
+      function closeMap() {
+        mapOverlay.classList.remove("show");
+        mapOverlay.setAttribute("aria-hidden", "true");
+        beep(520, 0.06, "sine", 0.02);
+      }
+
+      // ---------- Events
+      btnOpenMap.addEventListener("click", openMap);
+      btnCloseMap.addEventListener("click", closeMap);
+
+      mapOverlay.addEventListener("click", (e) => {
+        if (e.target === mapOverlay) closeMap();
+      });
+
+      btnSubmit.addEventListener("click", submitValues);
+
+      btnReset.addEventListener("click", () => {
+        // Reset to neutral-ish values
+        sKelvin.value = 300;
+        sBar.value = 50;
+        sVolt.value = 300;
+        sMHz.value = 42;
+        updateReads();
+        beep(600, 0.06, "sine", 0.02);
+      });
+
+      [sKelvin, sBar, sVolt, sMHz].forEach((el) => {
+        el.addEventListener("input", () => {
+          updateReads();
+          // quiet tick
+          beep(1200, 0.02, "sine", 0.006);
+        });
+      });
+
+      // Prevent accidental back navigation via Backspace
+      window.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") {
+          if (mapOverlay.classList.contains("show")) closeMap();
+          if (centerModal.classList.contains("show")) closeModal();
+        }
+      });
+
+      // ---------- Init
+      (function init() {
+        setStrikesUI();
+        setTimerUI();
+        updateReads();
+        renderPlanetList("none");
+
+        // lock controls until scenario begins
+        enableControls(false);
+        btnOpenMap.disabled = true;
+        btnSubmit.disabled = true;
+        btnReset.disabled = true;
+
+        // small boot effect
+        setPill("check");
+        reactorTxt.textContent = "STABIL";
+        setTimeout(() => {
+          beep(520, 0.05, "sine", 0.02);
+          beep(780, 0.06, "sine", 0.02);
+        }, 250);
+
+        // Start scenario automatically
+        beginScenario();
+      })();
+    </script>
+  </body>
+</html>

@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Hinweis</title>
+
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: #050505;
+      color: #f5f5f5;
+      font-family: Copperplate, Papyrus, fantasy;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      overflow: hidden;
+      position: relative;
+
+
+      perspective: 1200px;
+      perspective-origin: 50% 45%;
+    }
+
+    body::before{
+      content:"";
+      position:fixed;
+      inset:0;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+      background-size: 60px 60px;
+      opacity: 0.22;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .container {
+      width: 90%;
+      max-width: 720px;
+      padding: 30px 35px;
+      border: 1px solid #2a2a2a;
+      border-radius: 12px;
+      background: radial-gradient(circle at top, #151515, #050505);
+      box-shadow: 0 0 25px rgba(0, 0, 0, 0.7);
+      position: relative;
+      z-index: 1;
+      font-size: 20px;
+      transform-style: preserve-3d;
+      will-change: transform, opacity, filter, box-shadow;
+    }
+
+    .container.exitSpin{
+      animation: glitchExit 1600ms cubic-bezier(0.77, 0, 0.175, 1) forwards;
+    }
+
+    @keyframes glitchExit{
+      0%{
+        transform: translateZ(0) scale(1);
+        opacity: 1;
+        filter: blur(0px) hue-rotate(0deg);
+        box-shadow: 0 0 25px rgba(0, 0, 0, 0.7);
+      }
+      15%{
+        transform: translateZ(-50px) scale(0.98);
+        opacity: 0.9;
+        filter: blur(0.5px) hue-rotate(5deg);
+      }
+      30%{
+        transform: translateZ(-100px) scale(0.95);
+        opacity: 0.8;
+        filter: blur(1px) hue-rotate(10deg);
+        box-shadow: 0 0 35px rgba(0, 0, 0, 0.3);
+      }
+      45%{
+        transform: translateZ(-200px) scale(0.9);
+        opacity: 0.6;
+        filter: blur(2px) hue-rotate(15deg);
+        box-shadow: 0 0 40px rgba(0, 0, 0, 0.4);
+      }
+      60%{
+        transform: translateZ(-400px) scale(0.8);
+        opacity: 0.4;
+        filter: blur(4px) hue-rotate(20deg);
+        box-shadow: 0 0 45px rgba(0, 0, 0, 0.5);
+      }
+      75%{
+        transform: translateZ(-700px) scale(0.6);
+        opacity: 0.2;
+        filter: blur(8px) hue-rotate(25deg);
+        box-shadow: 0 0 50px rgba(0, 0, 0, 0.6);
+      }
+      90%{
+        transform: translateZ(-1000px) scale(0.4);
+        opacity: 0.1;
+        filter: blur(12px) hue-rotate(30deg);
+        box-shadow: 0 0 60px rgba(0, 0, 0, 0.7);
+      }
+      100%{
+        transform: translateZ(-1500px) scale(0.3);
+        opacity: 0;
+        filter: blur(15px) hue-rotate(35deg);
+        box-shadow: 0 0 70px rgba(0, 0, 0, 0.8);
+      }
+    }
+
+    .container.exitSpin::before{
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, 
+        transparent, 
+        rgba(70, 243, 255, 0.062), 
+        transparent);
+      z-index: 2;
+      animation: scanline 1600ms cubic-bezier(0.77, 0, 0.175, 1) forwards;
+      opacity: 0;
+    }
+
+    @keyframes scanline{
+      0%{
+        top: 0;
+        opacity: 0;
+      }
+      10%{
+        opacity: 0.3;
+      }
+      50%{
+        top: 100%;
+        opacity: 0.7;
+      }
+      80%{
+        opacity: 0.4;
+      }
+      100%{
+        top: 100%;
+        opacity: 0;
+      }
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 10px;
+      font-size: 1.8rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .subtitle{
+      text-align:center;
+      opacity: 0.75;
+      font-size: 18px;
+      margin-bottom: 22px;
+    }
+
+    .group-title {
+      margin-top: 14px;
+      margin-bottom: 8px;
+      font-size: 0.9rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #bbbbbb;
+    }
+
+    .text {
+      font-size: 20px;
+      line-height: 1.55;
+      opacity: 0.92;
+    }
+
+    .bullet {
+      margin-top: 10px;
+      padding-left: 18px;
+    }
+
+    .bullet li{
+      margin: 8px 0;
+      opacity: 0.9;
+      line-height: 1.45;
+    }
+
+    .mono {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono","Courier New", monospace;
+      font-size: 0.95em;
+      opacity: 0.95;
+    }
+
+    .actions {
+      margin-top: 22px;
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    button {
+      padding: 10px 18px;
+      border-radius: 999px;
+      border: 1px solid #666;
+      background: #181818;
+      color: #f5f5f5;
+      cursor: pointer;
+      font-size: 0.95rem;
+      transition: transform 0.1s ease, box-shadow 0.1s ease, background 0.2s ease;
+      font-family: Copperplate, Papyrus, fantasy;
+      user-select: none;
+    }
+
+    button:hover {
+      background: #262626;
+      box-shadow: 0 0 10px rgba(255,255,255,0.1);
+      transform: translateY(-1px);
+    }
+
+    button:disabled{
+      opacity: .6;
+      cursor: not-allowed;
+      transform: none !important;
+      box-shadow: none !important;
+    }
+
+    .btnPrimary{
+      box-shadow: 0 0 14px rgba(17, 20, 201, 0.973);
+    }
+
+    @media (max-width: 520px){
+      .container{ padding: 22px 20px; }
+      h1{ font-size: 1.5rem; }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container" id="card">
+    <h1>Hinweis</h1>
+    <div class="subtitle">Rechtliches • Gesundheit • Sicherheit</div>
+
+    <div class="group-title">Disclaimer</div>
+    <div class="text">
+      Dieses Spiel dient ausschließlich der Unterhaltung. Alle dargestellten Inhalte,
+      Personen, Systeme und Ereignisse sind frei erfunden. Ähnlichkeiten mit realen
+      Personen oder Ereignissen sind zufällig.
+    </div>
+
+    <div class="group-title">Wichtige Hinweise</div>
+    <ul class="bullet">
+      <li>Das Spiel enthält visuelle Effekte (z.B. Flackern/Blenden). Bei Unwohlsein bitte sofort pausieren.</li>
+      <li>Nutze Kopfhörer/Lautstärke mit Bedacht – du kannst Musik & Effekte in der Lobby anpassen.</li>
+      <li>Bei gesundheitlichen Problemen (Epilepsie, Herzprobleme, etc.) konsultiere bitte einen Arzt vor dem Spielen.</li>
+    </ul>
+
+    <div class="group-title">Einverständnis</div>
+    <div class="text">
+      Mit dem Fortfahren bestätigst du, dass du diese Hinweise gelesen hast und auf eigene Verantwortung spielst.
+    </div>
+
+    <div class="actions">
+      <button type="button" id="btnGo" class="btnPrimary">Verstanden • Weiter</button>
+    </div>
+  </div>
+
+  <script>
+    const card = document.getElementById("card");
+    const btnGo = document.getElementById("btnGo");
+
+    function toLobby() {
+      if (!localStorage.getItem("escape_username")) {
+        localStorage.setItem("escape_username", "Player");
+      }
+
+      if (!localStorage.getItem("escape_lives")) {
+        localStorage.setItem("escape_lives", "5");
+      }
+
+      if (!localStorage.getItem("escape_world_id")) {
+        localStorage.setItem("escape_world_id", "1");
+      }
+
+      if (!localStorage.getItem("escape_global_start_time")) {
+        localStorage.setItem("escape_global_start_time", String(Date.now()));
+      }
+
+      window.location.href = "screen3.html";
+    }
+
+    btnGo.addEventListener("click", () => {
+      btnGo.disabled = true;
+
+      card.classList.add("exitSpin");
+
+      setTimeout(() => {
+        toLobby();
+      }, 1600);
+    });
+  </script>
+</body>
+</html>

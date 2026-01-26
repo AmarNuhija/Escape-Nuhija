@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Ladebildschirm</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body{
+      background:#050505;
+      color:#f5f5f5;
+      font-family: Copperplate, Papyrus, fantasy;
+      height:100vh;
+      overflow:hidden;
+      position:relative;
+    }
+
+    #startBtn{
+      position:absolute;
+      inset:0;
+      margin:auto;
+      width:260px;
+      height:60px;
+      border-radius:999px;
+      border:1px solid rgba(245,245,245,0.9);
+      background:#111;
+      color:#f5f5f5;
+      font-family: inherit;
+      font-size: 1rem;
+      cursor:pointer;
+      z-index:5;
+      letter-spacing:.08em;
+      text-transform:uppercase;
+    }
+    #startBtn:hover{
+      background:#181818;
+      box-shadow:0 0 14px rgba(255,255,255,0.16);
+    }
+
+    #fx{
+      position:fixed;
+      inset:0;
+      width:100%;
+      height:100%;
+      z-index:3;
+    }
+
+    .logo{
+      position:absolute;
+      right:40px;
+      bottom:40px;
+      width:130px;
+      height:130px;
+      border-radius:50%;
+      border:2px solid rgba(245,245,245,0.9);
+      display:flex;
+      justify-content:center;
+      align-items:center;
+      overflow:hidden;
+      background:#050505;
+      z-index:4;
+    }
+    .logo img{
+      max-width:90%;
+      max-height:90%;
+      object-fit:contain;
+      filter:drop-shadow(0 0 6px rgba(0,0,0,0.7));
+    }
+
+    .status{
+      position:absolute;
+      left:50%;
+      bottom:26px;
+      transform:translateX(-50%);
+      font-size:.95rem;
+      opacity:.72;
+      z-index:4;
+      letter-spacing:.06em;
+      user-select:none;
+    }
+
+    .fadeOut{ animation: fadeOut 700ms ease forwards; }
+    @keyframes fadeOut { to { opacity: 0; } }
+  </style>
+</head>
+
+<body>
+  <button id="startBtn">Klicken, um zu starten</button>
+
+  <canvas id="fx"></canvas>
+
+  <div class="logo">
+    <img src="logo.png" alt="Logo">
+  </div>
+
+  <div class="status" id="status">bereit…</div>
+
+  <audio id="snowSound" preload="auto" loop>
+    <source src="footsteps-crunching-on-snow-335508.mp3" type="audio/mpeg">
+  </audio>
+
+  <script>
+    // =========================
+    //  SCHNEE MACHT TITEL SICHTBAR (OHNE TYPEWRITER)
+    // =========================
+    const GAME_NAME = "NEBULA LOCK";   // <- ändere hier deinen Namen
+    const NEXT_PAGE = "screen2.html";
+    const DURATION_MS = 10000;        // <- 10 Sekunden
+
+    const startBtn = document.getElementById("startBtn");
+    const statusEl = document.getElementById("status");
+
+    const canvas = document.getElementById("fx");
+    const ctx = canvas.getContext("2d");
+
+    // ✅ Sound refs
+    const snowSound = document.getElementById("snowSound");
+
+    let W=0, H=0, DPR=1;
+
+    function resize(){
+      DPR = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
+      W = window.innerWidth | 0;
+      H = window.innerHeight | 0;
+      canvas.width = (W * DPR) | 0;
+      canvas.height = (H * DPR) | 0;
+      canvas.style.width = W + "px";
+      canvas.style.height = H + "px";
+      ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+      buildTextMask();
+    }
+    window.addEventListener("resize", resize);
+
+    // ---- Text-Maske als "Zielbereich" (wird NICHT gemalt!)
+    let mask = null; // Uint8ClampedArray alpha
+    let maskW=0, maskH=0;
+
+    function buildTextMask(){
+      const off = document.createElement("canvas");
+      off.width = W;
+      off.height = H;
+      const o = off.getContext("2d");
+
+      o.clearRect(0,0,W,H);
+
+      const fontSize = Math.max(52, Math.min(110, Math.floor(W * 0.10)));
+      o.font = `800 ${fontSize}px Copperplate, Papyrus, fantasy`;
+      o.textAlign = "center";
+      o.textBaseline = "middle";
+      o.fillStyle = "#fff";
+
+      o.fillText(GAME_NAME, W/2, H/2);
+
+      const img = o.getImageData(0,0,W,H);
+      mask = img.data;
+      maskW = W;
+      maskH = H;
+    }
+
+    // ---- Snow particles
+    const flakes = [];
+    const stuck = [];
+
+    function spawnSnow(count){
+      for(let i=0;i<count;i++){
+        flakes.push({
+          x: Math.random()*W,
+          y: -20 - Math.random()*H*0.2,
+          r: Math.random()*2.2 + 0.7,
+          vy: Math.random()*1.6 + 0.7,
+          vx: (Math.random()-0.5)*0.5,
+          a: Math.random()*0.45 + 0.10
+        });
+      }
+    }
+
+    function maskAlphaAt(x,y){
+      if(!mask) return 0;
+      const xi = x|0, yi = y|0;
+      if(xi<0 || yi<0 || xi>=maskW || yi>=maskH) return 0;
+      return mask[(yi*maskW + xi)*4 + 3];
+    }
+
+    let startTime = 0;
+    let running = false;
+    let redirectScheduled = false;
+
+    function loop(ts){
+      if(!running) return;
+      if(!startTime) startTime = ts;
+
+      const elapsed = ts - startTime;
+      const p = Math.max(0, Math.min(1, elapsed / DURATION_MS));
+
+      statusEl.textContent = `lädt… ${Math.floor(p*100)}%`;
+
+      spawnSnow(10);
+
+      ctx.clearRect(0,0,W,H);
+
+      ctx.fillStyle = "rgba(255,255,255,0.95)";
+      for(let i=flakes.length-1;i>=0;i--){
+        const f = flakes[i];
+        f.x += f.vx;
+        f.y += f.vy;
+
+        f.vx += (Math.random()-0.5)*0.02;
+        f.vx = Math.max(-0.9, Math.min(0.9, f.vx));
+
+        if(f.x < -30) f.x = W+30;
+        if(f.x > W+30) f.x = -30;
+
+        const a = maskAlphaAt(f.x, f.y);
+        if(a > 30){
+          const chance = (0.02 + 0.30*p) * (a/255);
+          if(Math.random() < chance){
+            stuck.push({
+              x: f.x + (Math.random()*2 - 1),
+              y: f.y + (Math.random()*2 - 1),
+              r: Math.random()*1.8 + 0.8,
+              a: Math.random()*0.60 + 0.25
+            });
+            flakes.splice(i,1);
+            continue;
+          }
+        }
+
+        ctx.globalAlpha = f.a;
+        ctx.beginPath();
+        ctx.arc(f.x, f.y, f.r, 0, Math.PI*2);
+        ctx.fill();
+
+        if(f.y > H+40) flakes.splice(i,1);
+      }
+
+      ctx.globalAlpha = 1;
+      ctx.shadowColor = "rgba(255,255,255,0.22)";
+      ctx.shadowBlur = 10;
+
+      for(const s of stuck){
+        const aa = Math.min(1, s.a + p*0.20);
+        ctx.globalAlpha = aa;
+        ctx.beginPath();
+        ctx.arc(s.x, s.y, s.r, 0, Math.PI*2);
+        ctx.fill();
+      }
+
+      ctx.shadowBlur = 0;
+      ctx.globalAlpha = 1;
+
+      if(p >= 1 && !redirectScheduled){
+        redirectScheduled = true;
+        statusEl.textContent = "bereit";
+
+        // ✅ Sound sanft ausblenden vor Redirect
+        const fadeMs = 650;
+        const startVol = snowSound.volume;
+        const t0 = performance.now();
+
+        function fadeOutSound(t){
+          const k = Math.min(1, (t - t0) / fadeMs);
+          snowSound.volume = startVol * (1 - k);
+          if(k < 1) requestAnimationFrame(fadeOutSound);
+          else {
+            try { snowSound.pause(); } catch(e) {}
+            snowSound.currentTime = 0;
+          }
+        }
+
+        setTimeout(() => {
+          document.body.classList.add("fadeOut");
+          requestAnimationFrame(fadeOutSound);
+          setTimeout(() => window.location.href = NEXT_PAGE, 650);
+        }, 900);
+      }
+
+      requestAnimationFrame(loop);
+    }
+
+    startBtn.addEventListener("click", () => {
+      startBtn.style.display = "none";
+      resize();
+      flakes.length = 0;
+      stuck.length = 0;
+      startTime = 0;
+      redirectScheduled = false;
+      running = true;
+
+      // ✅ Sound starten (muss im User-Click passieren)
+      try{
+        snowSound.volume = 0.03; // angenehm leise (0..1)
+        snowSound.currentTime = 0;
+        snowSound.play().catch(()=>{});
+      }catch(e){}
+
+      requestAnimationFrame(loop);
+    });
+
+    resize();
+  </script>
+</body>
+</html>

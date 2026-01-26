@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Game Over</title>
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+
+      body {
+        background: #050505;
+        color: #f5f5f5;
+        font-family: Copperplate, Papyrus, fantasy;
+        min-height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        overflow: hidden;
+        position: relative;
+      }
+
+      body::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        background-image:
+          linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+        background-size: 60px 60px;
+        opacity: 0.25;
+        pointer-events: none;
+        z-index: 0;
+      }
+
+      /* ======= FAKE "VORHANG" (damit Sound nicht erst beim Menü wirkt) ======= */
+      .curtain {
+        position: fixed;
+        inset: 0;
+        z-index: 50;
+        pointer-events: none;
+        background:
+          radial-gradient(800px 420px at 50% 40%, rgba(255,255,255,0.06), transparent 65%),
+          linear-gradient(180deg, rgba(0,0,0,0.95), rgba(0,0,0,0.92));
+        opacity: 1;
+        animation: curtainOut 0.75s ease forwards;
+      }
+
+      .curtain::before,
+      .curtain::after {
+        content: "";
+        position: absolute;
+        top: -10%;
+        bottom: -10%;
+        width: 52vw;
+        background: linear-gradient(90deg, rgba(0,0,0,0.98), rgba(0,0,0,0.78));
+        filter: blur(0.2px);
+      }
+      .curtain::before { left: 0; transform: translateX(0%); animation: leftSlide 0.75s ease forwards; }
+      .curtain::after  { right: 0; transform: translateX(0%); animation: rightSlide 0.75s ease forwards; }
+
+      @keyframes leftSlide {
+        to { transform: translateX(-110%); }
+      }
+      @keyframes rightSlide {
+        to { transform: translateX(110%); }
+      }
+      @keyframes curtainOut {
+        0% { opacity: 1; }
+        75% { opacity: 1; }
+        100% { opacity: 0; }
+      }
+
+      /* ======= MENU WRAPPER (erst nach Vorhang sichtbar) ======= */
+      .wrapper {
+        position: relative;
+        z-index: 1;
+        width: 90%;
+        max-width: 600px;
+        padding: 32px 36px;
+        border-radius: 16px;
+        border: 1px solid #333;
+        background: radial-gradient(circle at top, #171717, #050505);
+        box-shadow: 0 0 26px rgba(0, 0, 0, 0.85);
+        text-align: center;
+
+        opacity: 0;
+        transform: translateY(8px);
+        transition: opacity 0.35s ease, transform 0.35s ease;
+      }
+
+      .wrapper.show {
+        opacity: 1;
+        transform: translateY(0px);
+      }
+
+      .title {
+        font-size: 2rem;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        margin-bottom: 12px;
+      }
+
+      .subtitle { font-size: 1rem; margin-bottom: 6px; opacity: 0.8; }
+      .info { font-size: 0.9rem; margin-bottom: 26px; opacity: 0.8; }
+      .world-info { font-size: 0.95rem; margin-bottom: 18px; }
+
+      .buttons {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        margin-top: 10px;
+      }
+
+      .btn {
+        padding: 12px 18px;
+        border-radius: 999px;
+        border: 1px solid #f5f5f5;
+        background: #181818;
+        color: #f5f5f5;
+        cursor: pointer;
+        font-size: 0.95rem;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        transition: background 0.2s ease, transform 0.1s ease, box-shadow 0.2s ease;
+        font-family: Copperplate, Papyrus, fantasy;
+      }
+
+      .btn:hover {
+        background: #262626;
+        transform: translateY(-1px);
+        box-shadow: 0 0 12px rgba(255, 255, 255, 0.15);
+      }
+
+      .btn.secondary { border-color: #777; opacity: 0.9; }
+      .username { font-weight: 700; }
+
+      #goSound { display: none; }
+    </style>
+  </head>
+
+  <body>
+    <!-- Vorhang -->
+    <div class="curtain" aria-hidden="true"></div>
+
+    <audio id="goSound" src="game-over-38511.mp3" preload="auto"></audio>
+
+    <div class="wrapper" id="goWrapper">
+      <div class="title">Game Over</div>
+      <div class="subtitle">
+        <span id="goUsername" class="username">Player</span>, du hast keine Leben mehr.
+      </div>
+      <div class="world-info">Aktuelle Welt: <span id="goWorld">1</span></div>
+      <div class="info">
+        Du kannst diese Welt neu starten (Raum&nbsp;1, 5 Leben) oder eine
+        komplett neue Welt beginnen.
+      </div>
+
+      <div class="buttons">
+        <button class="btn" onclick="restartWorld()">
+          Gleiche Welt neu starten (Raum 1, 5 Leben)
+        </button>
+        <button class="btn secondary" onclick="startNewWorld()">
+          Neue Welt beginnen
+        </button>
+      </div>
+    </div>
+
+    <script>
+      const WORLD_KEY = "escape_world_id";
+      const LIVES_KEY = "escape_lives";
+      const ROOM1_STATE_KEY = "escape_room1_state";
+      const ROOM1_OFFSET_KEY = "escape_room1_question_offset";
+
+      const goSound = document.getElementById("goSound");
+      const goWrapper = document.getElementById("goWrapper");
+
+      function tryPlayGameOverSound() {
+        if (!goSound) return false;
+
+        goSound.pause();
+        goSound.currentTime = 0;
+        goSound.volume = 0.6;
+
+        const p = goSound.play();
+        if (p && typeof p.then === "function") {
+          p.then(() => {}).catch(() => {});
+        }
+        return true;
+      }
+
+      function installFirstInteractionFallback() {
+        const resume = () => {
+          tryPlayGameOverSound();
+          document.removeEventListener("pointerdown", resume);
+          document.removeEventListener("keydown", resume);
+          document.removeEventListener("touchstart", resume);
+        };
+
+        document.addEventListener("pointerdown", resume, { once: true });
+        document.addEventListener("keydown", resume, { once: true });
+        document.addEventListener("touchstart", resume, { once: true });
+      }
+
+      (function initInfoAndTiming() {
+        const name = (localStorage.getItem("escape_username") || "Player").trim();
+        document.getElementById("goUsername").textContent = name || "Player";
+
+        let worldId = parseInt(localStorage.getItem(WORLD_KEY) || "1", 10);
+        if (isNaN(worldId) || worldId < 1) worldId = 1;
+        document.getElementById("goWorld").textContent = String(worldId);
+
+        // 1) Sound so früh wie möglich versuchen
+        tryPlayGameOverSound();
+
+        // 2) Noch 1x direkt nach dem ersten Paint (manchmal startet es dann früher)
+        requestAnimationFrame(() => {
+          tryPlayGameOverSound();
+        });
+
+        // 3) Wenn Browser blockt -> bei erster Interaktion nachholen
+        installFirstInteractionFallback();
+
+        // 4) Menü erst nach "Vorhang" einblenden (damit Sound nicht "zu spät" wirkt)
+        setTimeout(() => {
+          goWrapper.classList.add("show");
+        }, 720); // passt zur Vorhang-Animation
+      })();
+
+      function resetProgressForCurrentWorld() {
+        localStorage.setItem(LIVES_KEY, "5");
+        localStorage.removeItem(ROOM1_STATE_KEY);
+        localStorage.removeItem(ROOM1_OFFSET_KEY);
+      }
+
+      function restartWorld() {
+        resetProgressForCurrentWorld();
+        window.location.href = "screen3.html";
+      }
+
+      function startNewWorld() {
+        let worldId = parseInt(localStorage.getItem(WORLD_KEY) || "1", 10);
+        if (isNaN(worldId) || worldId < 1) worldId = 1;
+        worldId += 1;
+        localStorage.setItem(WORLD_KEY, String(worldId));
+
+        resetProgressForCurrentWorld();
+        localStorage.setItem("escape_global_start_time", String(Date.now()));
+        window.location.href = "screen3.html";
+      }
+    </script>
+  </body>
+</html>
