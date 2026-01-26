@@ -1958,8 +1958,6 @@ hideLoader();
             Kursparameter bestätigt. Autopilot übernimmt…
             <div class="big">System stabilisiert sich.</div>
             <div style="margin-top:10px" class="muted">
-              (Wenn du eine nächste Datei hast: <span class="mono">raum3.html</span> wird automatisch versucht.)
-            </div>
           `,
           actions: [
             {
@@ -2050,9 +2048,8 @@ function restartRound() {
 
 
       function tryGoNextRoom() {
-        // Kein Lobby-Button. Wir versuchen raum3.html – wenn nicht vorhanden, bleibt das Modal.
         closeModal();
-        const next = "raum3.html";
+        const next = "room3.html";
         // Give a tiny feedback
         showModal({
           title: "ÜBERGABE",
