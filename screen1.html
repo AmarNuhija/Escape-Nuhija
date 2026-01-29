@@ -46,28 +46,6 @@
       z-index:3;
     }
 
-    .logo{
-      position:absolute;
-      right:40px;
-      bottom:40px;
-      width:130px;
-      height:130px;
-      border-radius:50%;
-      border:2px solid rgba(245,245,245,0.9);
-      display:flex;
-      justify-content:center;
-      align-items:center;
-      overflow:hidden;
-      background:#050505;
-      z-index:4;
-    }
-    .logo img{
-      max-width:90%;
-      max-height:90%;
-      object-fit:contain;
-      filter:drop-shadow(0 0 6px rgba(0,0,0,0.7));
-    }
-
     .status{
       position:absolute;
       left:50%;
@@ -90,9 +68,6 @@
 
   <canvas id="fx"></canvas>
 
-  <div class="logo">
-    <img src="logo.png" alt="Logo">
-  </div>
 
   <div class="status" id="status">bereit…</div>
 
@@ -104,7 +79,7 @@
     // =========================
     //  SCHNEE MACHT TITEL SICHTBAR (OHNE TYPEWRITER)
     // =========================
-    const GAME_NAME = "NEBULA LOCK";   // <- ändere hier deinen Namen
+    const GAME_NAME = "SPROOMO";   // <- ändere hier deinen Namen
     const NEXT_PAGE = "screen2.html";
     const DURATION_MS = 10000;        // <- 10 Sekunden
 

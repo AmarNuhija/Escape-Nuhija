@@ -990,6 +990,13 @@
   </head>
 
   <body>
+    <audio
+  id="room2Music"
+  src="Room2.mp3"
+  loop
+  preload="auto"
+></audio>
+
     <div id="gameLoader" aria-label="Lädt…">
   <div class="loaderCard">
 
@@ -1025,6 +1032,8 @@
   </div>
 </div>
 
+
+
     <div id="gameRoot">
       <div class="topbar">
         <div class="brand">
@@ -1059,7 +1068,7 @@
             <!-- LEFT SCREEN -->
             <div class="screen" aria-label="Linker Bildschirm">
               <div class="screenHeader">
-                <span>NAV-KARTE</span>
+                <span>KARTE</span>
                 <button class="btn btnPrimary" id="btnOpenMap" disabled>
                   Karte öffnen
                 </button>
@@ -1081,7 +1090,6 @@
             <div class="screen" aria-label="Mittlerer Bildschirm">
               <div class="screenHeader">
                 <span>WARNUNG</span>
-                <span class="muted mono" id="midCode">NAV-ALERT</span>
               </div>
               <div class="screenBody" id="midBody">
                 <div class="miniGrid"></div>
@@ -1228,8 +1236,7 @@
               </div>
             </div>
             <div class="mapHint">
-              Merke dir die Werte <b>auf dem Weg</b><br />
-              zum rot blinkenden Planeten.
+              Merke dir die rot blinkenden Werte auf dem Weg zum Zielplaneten.
             </div>
             <button class="btn" id="btnCloseMap">Zurück ins Cockpit</button>
           </div>
@@ -1285,6 +1292,49 @@ function hideLoader() {
   setTimeout(() => loader.remove(), 650);
 }
 
+// ---------- ROOM 2 BACKGROUND MUSIC
+const room2Music = document.getElementById("room2Music");
+
+function startRoom2Music() {
+  if (!room2Music) return;
+
+  room2Music.volume = 0;
+  room2Music.currentTime = 0;
+
+  room2Music.play().then(() => {
+    fadeInRoom2Music(2500);
+  }).catch(() => {
+    document.addEventListener("click", () => {
+      room2Music.play().then(() => fadeInRoom2Music(2500));
+    }, { once: true });
+  });
+}
+
+function fadeInRoom2Music(duration = 2000) {
+  const target = 0.03; 
+  const steps = 30;
+  const stepTime = duration / steps;
+  let current = 0;
+
+  room2Music.volume = 0;
+
+  const i = setInterval(() => {
+    current += target / steps;
+    if (current >= target) {
+      room2Music.volume = target;
+      clearInterval(i);
+    } else {
+      room2Music.volume = current;
+    }
+  }, stepTime);
+}
+
+function stopRoom2Music() {
+  if (!room2Music) return;
+  room2Music.pause();
+}
+
+
       /* =========================================================
          RAUM 2 – KURSKORREKTUR (Single-File)
          - Kein "Zurück zur Lobby"
@@ -1316,11 +1366,10 @@ function hideLoader() {
         } catch (_) {}
       }
 
-      // ---------- Game State
       const GAME = {
         strikes: 0,
         maxStrikes: 3,
-        totalSeconds: 90, // 1:30
+        totalSeconds: 90, 
         timer: null,
         started: false,
         solved: false,
@@ -1328,103 +1377,72 @@ function hideLoader() {
         target: null,
       };
 
-      // 5 Planets (name, distance, route values)
-      // Values are what players must set via sliders.
-      // Displayed on map as "on the path" values.
       const PLANETS = [
         {
-          id: "AUR-7",
-          name: "AURORA-7",
+          id: "SAD-6/7",
+          name: "SADALA-6/7",
           distance: 42,
           values: { kelvin: 410, bar: 22, volt: 180, mhz: 17 },
         },
         {
-          id: "KRY-3",
-          name: "KRYOS-III",
+          id: "NAM-2",
+          name: "NAMEK-2",
           distance: 58,
           values: { kelvin: 600, bar: 50, volt: 300, mhz: 42 },
         },
         {
-          id: "VLT-9",
-          name: "VOLTAR-IX",
+          id: "VAM-9",
+          name: "VAMPA-9",
           distance: 66,
           values: { kelvin: 720, bar: 61, volt: 420, mhz: 9 },
         },
         {
-          id: "NEX-2",
-          name: "NEXUS-II",
+          id: "KAI-5",
+          name: "KAIOSAMA-5",
           distance: 74,
           values: { kelvin: 530, bar: 35, volt: 255, mhz: 73 },
         },
         {
-          id: "EON-5",
-          name: "EON-5",
-          distance: 88, // farthest => target
+          id: "GAN-4",
+          name: "GANKARA-4",
+          distance: 88,
           values: { kelvin: 650, bar: 50, volt: 300, mhz: 88 },
         },
       ];
 
-      // Map layout (normalized to 1000x560)
       const MAP = {
-        start: { x: 160, y: 455, label: "SOL-DOCK" },
-        nodes: [
-          { planetId: "AUR-7", x: 210, y: 120 },
-          { planetId: "KRY-3", x: 520, y: 95 },
-          { planetId: "VLT-9", x: 825, y: 135 },
-          { planetId: "NEX-2", x: 690, y: 420 },
-          { planetId: "EON-5", x: 835, y: 350 },
-        ],
-        // “Wege wie im Bild”: jeder Planet hat einen geschwungenen, gestrichelten Pfad
-        // Wir machen pro Planet ein paar Kontrollpunkte (quadratische Bezier via SVG path Q/T)
-        paths: [
-          {
-            planetId: "AUR-7",
-            d: "M160,455 C140,320 170,240 250,200 C310,170 280,130 210,120",
-            valuePos: [
-              { x: 175, y: 360, key: "bar" },
-              { x: 210, y: 260, key: "kelvin" },
-              { x: 235, y: 170, key: "mhz" },
-            ],
-          },
-          {
-            planetId: "KRY-3",
-            d: "M160,455 C250,420 320,360 360,300 C420,210 440,130 520,95",
-            valuePos: [
-              { x: 265, y: 410, key: "bar" },
-              { x: 365, y: 310, key: "volt" },
-              { x: 470, y: 165, key: "kelvin" },
-            ],
-          },
-          {
-            planetId: "VLT-9",
-            d: "M160,455 C320,470 420,440 520,380 C640,310 700,210 825,135",
-            valuePos: [
-              { x: 330, y: 450, key: "mhz" },
-              { x: 545, y: 360, key: "bar" },
-              { x: 700, y: 230, key: "volt" },
-            ],
-          },
-          {
-            planetId: "NEX-2",
-            d: "M160,455 C290,520 420,520 520,500 C600,485 630,455 690,420",
-            valuePos: [
-              { x: 300, y: 505, key: "volt" },
-              { x: 460, y: 505, key: "kelvin" },
-              { x: 615, y: 468, key: "bar" },
-            ],
-          },
-          {
-            planetId: "EON-5",
-            d: "M160,455 C260,390 360,350 450,340 C600,320 690,390 835,350",
-            valuePos: [
-              { x: 265, y: 405, key: "kelvin" },
-              { x: 520, y: 335, key: "bar" },
-              { x: 740, y: 368, key: "volt" },
-              { x: 650, y: 360, key: "mhz" },
-            ],
-          },
-        ],
-      };
+  start: { x: 160, y: 455, label: "SOL-DOCK" },
+  nodes: [
+    { planetId: "SAD-6/7", x: 210, y: 120 },
+    { planetId: "NAM-2",   x: 520, y: 95 },
+    { planetId: "VAM-9",   x: 825, y: 135 },
+    { planetId: "KAI-5",   x: 690, y: 420 },
+    { planetId: "GAN-4",   x: 835, y: 350 },
+  ],
+  paths: [
+    {
+      planetId: "SAD-6/7",
+      d: "M160,455 C140,320 170,240 250,200 C310,170 280,130 210,120",
+    },
+    {
+      planetId: "NAM-2",
+      d: "M160,455 C250,420 320,360 360,300 C420,210 440,130 520,95",
+    },
+    {
+      planetId: "VAM-9",
+      d: "M160,455 C320,470 420,440 520,380 C640,310 700,210 825,135",
+    },
+    {
+      planetId: "KAI-5",
+      d: "M160,455 C290,520 420,520 520,500 C600,485 630,455 690,420",
+    },
+    {
+      planetId: "GAN-4",
+      d: "M160,455 C260,390 360,350 450,340 C600,320 690,390 835,350",
+    },
+  ],
+};
+
 
       // ---------- DOM refs
       const planetListEl = $("#planetList");
@@ -1677,6 +1695,8 @@ function hideLoader() {
   // ---- Render paths + auto values
   for (const p of MAP.paths) {
     const planet = PLANETS.find((x) => x.id === p.planetId);
+if (!planet) continue; // <-- verhindert Crash, wenn IDs nicht passen
+
     const isTarget = p.planetId === targetPlanetId;
 
     const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
@@ -1733,6 +1753,8 @@ function hideLoader() {
   // Planet nodes
   for (const n of MAP.nodes) {
     const planet = PLANETS.find((x) => x.id === n.planetId);
+if (!planet) continue;
+
     const isTarget = n.planetId === targetPlanetId;
 
     const node = document.createElement("div");
@@ -1821,6 +1843,7 @@ function hideLoader() {
 
       function beginScenario() {
         GAME.started = true;
+        startRoom2Music();
         setPill("check");
         setLoader(20, "Starte Systeme…");
 
@@ -1940,6 +1963,7 @@ hideLoader();
       }
 
       function solve() {
+        stopRoom2Music();
         localStorage.setItem("escape_room2_state", "success");
         GAME.solved = true;
         clearInterval(GAME.timer);
@@ -2056,7 +2080,6 @@ function restartRound() {
           tag: "AUTO",
           bodyHtml: `
             Navigationssequenz abgeschlossen.<br/>
-            Wenn <span class="mono">${next}</span> existiert, wird jetzt weitergeleitet.
           `,
           actions: [],
         });
@@ -2080,6 +2103,7 @@ function restartRound() {
 
 
   function failOut(reason) {
+    stopRoom2Music();
   if (GAME.solved) return;
 
   clearInterval(GAME.timer);
