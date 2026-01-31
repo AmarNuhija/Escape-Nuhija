@@ -178,7 +178,7 @@
 
         goSound.pause();
         goSound.currentTime = 0;
-        goSound.volume = 0.6;
+        goSound.volume = 0.06;
 
         const p = goSound.play();
         if (p && typeof p.then === "function") {
@@ -225,11 +225,20 @@
         }, 720); // passt zur Vorhang-Animation
       })();
 
-      function resetProgressForCurrentWorld() {
-        localStorage.setItem(LIVES_KEY, "5");
-        localStorage.removeItem(ROOM1_STATE_KEY);
-        localStorage.removeItem(ROOM1_OFFSET_KEY);
-      }
+function resetProgressForCurrentWorld() {
+  localStorage.setItem(LIVES_KEY, "5");
+
+  for (let i = 1; i <= 12; i++) {
+    localStorage.removeItem(`escape_room${i}_state`);
+  }
+
+  localStorage.removeItem(ROOM1_OFFSET_KEY);
+
+  for (let i = 1; i <= 12; i++) {
+    localStorage.removeItem(`escape_rewarded_life_room${i}`);
+  }
+}
+
 
       function restartWorld() {
         resetProgressForCurrentWorld();
